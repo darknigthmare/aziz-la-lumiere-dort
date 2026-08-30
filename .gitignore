@@ -5,3 +5,5 @@ coverage/
 dist/
 *.log
 .qa-*
+.vercel
+.env*
