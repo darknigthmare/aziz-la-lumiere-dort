@@ -6,10 +6,13 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('.', import.meta.url));
 const port = Number(process.env.PORT || 4173);
 const types = { '.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json','.svg':'image/svg+xml' };
+const publicFiles = new Set(['/','/index.html','/sw.js','/manifest.webmanifest']);
+const publicPrefixes = ['/src/','/assets/'];
 
 createServer(async (req,res) => {
   try {
     const raw = decodeURIComponent(new URL(req.url, 'http://localhost').pathname);
+    if (!publicFiles.has(raw) && !publicPrefixes.some(prefix => raw.startsWith(prefix))) throw new Error('private path');
     const safe = normalize(raw).replace(/^(\.\.[/\\])+/, '');
     let file = join(root, safe === '/' ? 'index.html' : safe.slice(1));
     if ((await stat(file)).isDirectory()) file = join(file, 'index.html');
