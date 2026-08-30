@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#0b0907">
+  <meta name="description" content="AZIZ — La Lumière Dort, jeu d'horreur 2,5D complet et jouable.">
+  <title>AZIZ — LA LUMIÈRE DORT v1.2.0</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon.svg">
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <main id="app">
+    <section id="title-screen" class="screen active" aria-labelledby="game-title">
+      <div class="temple-sky" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="title-card">
+        <p class="eyebrow">UNE EXPÉDITION SOUS LE SABLE · 1926</p>
+        <h1 id="game-title"><span>AZIZ</span><small>LA LUMIÈRE DORT</small></h1>
+        <p class="tagline">Tant qu’il veille, vous êtes en sécurité.</p>
+        <nav class="main-menu" aria-label="Menu principal">
+          <button data-menu="new" class="primary">Nouvelle expédition</button>
+          <button data-menu="continue">Continuer</button>
+          <button data-menu="chapters">Chapitres</button>
+          <button data-menu="archives">Archives & succès</button>
+          <button data-menu="options">Options</button>
+          <button data-menu="save">Importer / exporter</button>
+        </nav>
+        <p class="title-footer">Édition reconstruite professionnelle · v1.2.0 · PWA hors ligne</p>
+      </div>
+    </section>
+
+    <section id="game-screen" class="screen" aria-label="Jeu">
+      <canvas id="game-canvas" width="1280" height="720" tabindex="0" aria-label="Vue 2,5D du temple"></canvas>
+      <div id="hud" aria-live="polite">
+        <div class="hud-top"><span id="chapter-name"></span><span id="objective"></span></div>
+        <div class="meters">
+          <label>AZIZ <progress id="wake-meter" max="100"></progress><b id="wake-value"></b></label>
+          <label>SANTÉ <progress id="health-meter" max="100"></progress><b id="health-value"></b></label>
+          <label>LAMPE <progress id="battery-meter" max="100"></progress><b id="battery-value"></b></label>
+        </div>
+        <div id="crosshair" aria-hidden="true">·</div>
+        <div id="prompt"></div>
+        <div id="toast" role="status"></div>
+        <div class="inventory"><span>FLASH <b id="flash-count">3</b></span><span>CONFIANCE <b id="trust-value">50</b></span><span>ARCHIVES <b id="archive-count">0/18</b></span></div>
+      </div>
+      <div id="touch-controls" aria-label="Commandes tactiles">
+        <div id="touch-stick"><i></i></div>
+        <button data-action="interact">E</button><button data-action="flash">FLASH</button><button data-action="call">AZIZ</button><button data-action="lamp">LAMPE</button><button data-action="pause">Ⅱ</button>
+      </div>
+    </section>
+
+    <section id="panel" class="overlay" aria-modal="true" role="dialog" aria-labelledby="panel-title">
+      <div class="panel-card"><header><h2 id="panel-title"></h2><button data-close aria-label="Fermer">×</button></header><div id="panel-content"></div></div>
+    </section>
+    <section id="pause-overlay" class="overlay" aria-modal="true" role="dialog" aria-labelledby="pause-title">
+      <div class="panel-card pause-card"><p class="eyebrow">LE TEMPLE ATTEND</p><h2 id="pause-title">Pause</h2><button data-pause-action="resume" class="primary">Reprendre</button><button data-pause-action="journal">Journal</button><button data-pause-action="checkpoint">Revenir au point de contrôle</button><button data-pause-action="title">Quitter vers le menu</button></div>
+    </section>
+    <section id="ending-overlay" class="overlay" aria-modal="true" role="dialog"><div class="panel-card ending-card"><p class="eyebrow">FIN DÉCOUVERTE</p><h2 id="ending-title"></h2><p id="ending-text"></p><button id="ending-return" class="primary">Retour au menu</button></div></section>
+  </main>
+  <noscript>JavaScript doit être activé pour jouer à AZIZ — La Lumière Dort.</noscript>
+  <script src="src/data.js"></script>
+  <script src="src/game.js"></script>
+</body>
+</html>

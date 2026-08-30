@@ -1,0 +1,15 @@
+{
+  "name": "aziz-la-lumiere-dort",
+  "version": "1.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Jeu d'horreur 2,5D autonome — édition reconstruite v1.2.0",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "build": "node scripts-build.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
