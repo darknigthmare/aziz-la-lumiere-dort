@@ -18,3 +18,5 @@ Cette version a été reconstruite en code source propre à partir du contrat fo
 ## Originalité
 
 La reconstruction ne réutilise aucun fichier de l’archive introuvable. Les visuels Canvas, l’icône SVG, les cartes, textes et sons générés à l’exécution ont été créés spécifiquement pour ce dépôt.
+
+Le key art `assets/aziz-giza-1926-keyart.webp` est une création originale générée le 30 août 2026 avec l’outil d’image OpenAI intégré, puis uniquement convertie en WebP pour le chargement web. La dérivée `assets/aziz-giza-1926-social.jpg` sert aux aperçus Open Graph. Ces assets ne reprennent aucun visuel de film, de jeu ou de franchise. Le prompt exact et les contraintes sont archivés dans [docs/KEY_ART_PROMPT.md](docs/KEY_ART_PROMPT.md).

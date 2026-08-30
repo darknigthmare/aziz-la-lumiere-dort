@@ -2,12 +2,29 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0b0907">
-  <meta name="description" content="AZIZ — La Lumière Dort, jeu d'horreur 2,5D complet et jouable.">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="AZIZ — La Lumière Dort, survival horror archéologique 2,5D à Gizeh en 1926.">
+  <meta name="application-name" content="AZIZ — La Lumière Dort">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:title" content="AZIZ — La Lumière Dort">
+  <meta property="og:description" content="Survival horror archéologique 2,5D à Gizeh en 1926. Gardez le lien avec Aziz et survivez au temple.">
+  <meta property="og:image" content="https://aziz-la-lumiere-dort.vercel.app/assets/aziz-giza-1926-social.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AZIZ — La Lumière Dort">
+  <meta name="twitter:description" content="À Gizeh en 1926, la lumière d’Aziz est votre seule ligne de vie.">
+  <meta name="twitter:image" content="https://aziz-la-lumiere-dort.vercel.app/assets/aziz-giza-1926-social.jpg">
   <title>AZIZ — LA LUMIÈRE DORT v1.2.0</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icon-180.png">
+  <link rel="preload" as="image" href="assets/aziz-giza-1926-keyart.webp" type="image/webp" fetchpriority="high">
   <link rel="stylesheet" href="src/styles.css">
 </head>
 <body>
@@ -15,9 +32,9 @@
     <section id="title-screen" class="screen active" aria-labelledby="game-title">
       <div class="temple-sky" aria-hidden="true"><i></i><i></i><i></i></div>
       <div class="title-card">
-        <p class="eyebrow">UNE EXPÉDITION SOUS LE SABLE · 1926</p>
+        <p class="eyebrow">DOSSIER 17 · PLATEAU DE GIZEH · 1926</p>
         <h1 id="game-title"><span>AZIZ</span><small>LA LUMIÈRE DORT</small></h1>
-        <p class="tagline">Tant qu’il veille, vous êtes en sécurité.</p>
+        <p class="tagline">Tant qu’Aziz veille, la lumière vous appartient.</p>
         <nav class="main-menu" aria-label="Menu principal">
           <button data-menu="new" class="primary">Nouvelle expédition</button>
           <button data-menu="continue">Continuer</button>
@@ -25,28 +42,56 @@
           <button data-menu="archives">Archives & succès</button>
           <button data-menu="options">Options</button>
           <button data-menu="save">Importer / exporter</button>
+          <button id="install-game" hidden>Installer hors ligne</button>
         </nav>
-        <p class="title-footer">Édition reconstruite professionnelle · v1.2.0 · PWA hors ligne</p>
+        <p class="title-footer">Édition reconstruite v1.2.0 · campagne complète · créations originales · hors ligne</p>
+        <p id="storage-warning" class="storage-warning" role="status" hidden>Stockage persistant indisponible · progression conservée pour cette session uniquement.</p>
+      </div>
+    </section>
+
+    <section id="prologue-overlay" class="overlay" aria-modal="true" role="dialog" aria-labelledby="prologue-title">
+      <div class="panel-card prologue-card">
+        <p class="eyebrow">18 NOVEMBRE 1926 · 02 H 13</p>
+        <h2 id="prologue-title">Le temple sous le plateau</h2>
+        <p>L’expédition fictive Harcourt vient d’ouvrir une chambre qui ne figure sur aucun relevé. La galerie s’est refermée derrière vous. À la surface, Aziz tient seul la manivelle du projecteur à acétylène.</p>
+        <blockquote>« Trois signaux. Soleil — silence — soleil. Si je réponds trop vite, ce n’est plus moi. »</blockquote>
+        <div class="briefing-grid">
+          <span><b>C / clic droit</b>Diriger le projecteur</span>
+          <span><b>F</b>Appeler Aziz — et faire du bruit</span>
+          <span><b>E</b>Examiner et actionner</span>
+        </div>
+        <div class="dialog-actions"><button id="cancel-expedition">Retour</button><button id="begin-expedition" class="primary">Descendre dans le temple</button></div>
       </div>
     </section>
 
     <section id="game-screen" class="screen" aria-label="Jeu">
       <canvas id="game-canvas" width="1280" height="720" tabindex="0" aria-label="Vue 2,5D du temple"></canvas>
-      <div id="hud" aria-live="polite">
+      <div id="hud">
         <div class="hud-top"><span id="chapter-name"></span><span id="objective"></span></div>
+        <div id="chapter-banner" aria-live="polite"><span id="chapter-kicker"></span><strong id="chapter-banner-title"></strong><p id="chapter-banner-text"></p></div>
+        <div id="tutorial-card"></div>
         <div class="meters">
           <label>AZIZ <progress id="wake-meter" max="100"></progress><b id="wake-value"></b></label>
+          <label>LIEN <progress id="link-meter" max="100"></progress><b id="link-value"></b></label>
           <label>SANTÉ <progress id="health-meter" max="100"></progress><b id="health-value"></b></label>
           <label>LAMPE <progress id="battery-meter" max="100"></progress><b id="battery-value"></b></label>
         </div>
+        <div class="projector-readout">PROJECTEUR <b id="projector-mode">BALAYAGE</b></div>
         <div id="crosshair" aria-hidden="true">·</div>
         <div id="prompt"></div>
-        <div id="toast" role="status"></div>
-        <div class="inventory"><span>FLASH <b id="flash-count">3</b></span><span>CONFIANCE <b id="trust-value">50</b></span><span>ARCHIVES <b id="archive-count">0/18</b></span></div>
+        <div id="ritual"><span id="ritual-label">FOCALISATION</span><progress id="ritual-meter" max="100"></progress></div>
+        <div id="toast" role="status" aria-live="polite"></div>
+        <div id="threat-status" role="status"></div>
+        <div class="inventory"><span>FLASH <b id="flash-count">3</b></span><span>CONFIANCE <b id="trust-value">50</b></span><span>CORRUPTION <b id="corruption-value">0</b></span><span>ARCHIVES <b id="archive-count">0/18</b></span></div>
       </div>
       <div id="touch-controls" aria-label="Commandes tactiles">
-        <div id="touch-stick"><i></i></div>
-        <button data-action="interact">E</button><button data-action="flash">FLASH</button><button data-action="call">AZIZ</button><button data-action="lamp">LAMPE</button><button data-action="pause">Ⅱ</button>
+        <div id="touch-stick" aria-label="Déplacement"><i></i></div>
+        <button data-action="interact" aria-label="Interagir">E</button>
+        <button data-action="flash" aria-label="Flash au magnésium">FLASH</button>
+        <button data-action="call" aria-label="Appeler Aziz">AZIZ</button>
+        <button data-action="signal" aria-label="Transmettre le signal">SIGNAL</button>
+        <button data-action="lamp" aria-label="Allumer ou éteindre la lampe">LAMPE</button>
+        <button data-action="pause" aria-label="Pause">Ⅱ</button>
       </div>
     </section>
 
@@ -56,10 +101,11 @@
     <section id="pause-overlay" class="overlay" aria-modal="true" role="dialog" aria-labelledby="pause-title">
       <div class="panel-card pause-card"><p class="eyebrow">LE TEMPLE ATTEND</p><h2 id="pause-title">Pause</h2><button data-pause-action="resume" class="primary">Reprendre</button><button data-pause-action="journal">Journal</button><button data-pause-action="checkpoint">Revenir au point de contrôle</button><button data-pause-action="title">Quitter vers le menu</button></div>
     </section>
-    <section id="ending-overlay" class="overlay" aria-modal="true" role="dialog"><div class="panel-card ending-card"><p class="eyebrow">FIN DÉCOUVERTE</p><h2 id="ending-title"></h2><p id="ending-text"></p><button id="ending-return" class="primary">Retour au menu</button></div></section>
+    <section id="ending-overlay" class="overlay" aria-modal="true" role="dialog" aria-labelledby="ending-title"><div class="panel-card ending-card"><p class="eyebrow">FIN DÉCOUVERTE</p><h2 id="ending-title"></h2><p id="ending-text"></p><p id="ending-stats"></p><button id="ending-return" class="primary">Retour au menu</button></div></section>
   </main>
   <noscript>JavaScript doit être activé pour jouer à AZIZ — La Lumière Dort.</noscript>
   <script src="src/data.js"></script>
+  <script src="src/mechanics.js"></script>
   <script src="src/game.js"></script>
 </body>
 </html>
