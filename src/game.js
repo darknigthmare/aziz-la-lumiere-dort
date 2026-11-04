@@ -52,6 +52,7 @@
   const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
   const bounded = (value, minimum, maximum, fallback = minimum) => clamp(finite(value, fallback), minimum, maximum);
   const uniqueAllowed = (values, allowed) => [...new Set((Array.isArray(values) ? values : []).filter(value => allowed.has(value)))];
+  const connectedGamepad = () => Array.from(navigator.getGamepads?.() || []).find(pad => pad && pad.connected !== false);
 
   class Storage {
     constructor() {
@@ -103,7 +104,7 @@
     normalizeProfile(candidate) {
       const raw = candidate && typeof candidate === 'object' ? candidate : {};
       const rawOptions = raw.options && typeof raw.options === 'object' ? raw.options : {};
-      const difficulty = Data.DIFFICULTIES[raw.difficulty] ? raw.difficulty : DEFAULT_PROFILE.difficulty;
+      const difficulty = typeof raw.difficulty === 'string' && Object.hasOwn(Data.DIFFICULTIES, raw.difficulty) ? raw.difficulty : DEFAULT_PROFILE.difficulty;
       const archiveIds = new Set(Data.ARCHIVES.map(item => item.id));
       const achievementIds = new Set(Data.ACHIEVEMENTS.map(item => item.id));
       const endingIds = new Set(Object.keys(Data.ENDINGS));
@@ -252,7 +253,7 @@
       }, null, 2);
     }
 
-    import(text) {
+    prepareImport(text) {
       const bundle = JSON.parse(text);
       if (!bundle || bundle.schema !== 'aziz-save' || bundle.version !== Data.VERSION || !this.validProfile(bundle.profile)) {
         throw new Error('Sauvegarde AZIZ v1.2.0 invalide.');
@@ -260,6 +261,11 @@
       const profile = this.normalizeProfile(bundle.profile);
       const save = bundle.save === null ? null : this.normalizeSave(bundle.save);
       if (bundle.save !== null && !save) throw new Error('État de campagne corrompu ou incompatible.');
+      return { profile, save };
+    }
+
+    import(text) {
+      const { profile, save } = this.prepareImport(text);
       this.write(PROFILE_KEY, JSON.stringify(profile));
       if (save) this.write(STORAGE_KEY, JSON.stringify(save));
       return { profile, save };
@@ -374,6 +380,7 @@
     }
 
     suspend(suspended) {
+      if (suspended) window.speechSynthesis?.cancel();
       if (!this.ctx) return;
       const action = suspended ? this.ctx.suspend() : this.ctx.resume();
       action?.catch?.(() => {});
@@ -393,6 +400,8 @@
       this.lastDevice = 'keyboard';
       this.touchEnabled = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
       addEventListener('keydown', event => {
+        if (this.getGame()?.mode !== 'playing' || event.target?.matches?.('input, select, textarea')) return;
+        if (event.repeat && ['Escape', 'Tab', 'KeyJ', 'KeyE', 'Enter', 'KeyF', 'KeyC', 'Space', 'KeyL'].includes(event.code)) return;
         if (!this.keys.has(event.code)) this.pressed.add(event.code);
         this.keys.add(event.code);
         this.lastDevice = 'keyboard';
@@ -401,9 +410,8 @@
       });
       addEventListener('keyup', event => this.keys.delete(event.code));
       addEventListener('blur', () => {
-        this.keys.clear();
-        this.touchX = 0;
-        this.touchY = 0;
+        this.reset();
+        if (this.getGame()?.mode === 'playing') this.getGame().togglePause();
       });
       addEventListener('mousemove', event => {
         if (document.pointerLockElement === this.canvas) {
@@ -413,10 +421,12 @@
       });
       this.canvas.addEventListener('pointerdown', event => {
         const game = this.getGame();
-        if (game?.mode !== 'playing') return;
+        if (game?.mode !== 'playing' || event.pointerType === 'touch') return;
         if (event.button === 0) {
           if (document.pointerLockElement === this.canvas) this.pressed.add('Mouse0');
-          else this.canvas.requestPointerLock?.();
+          else {
+            try { this.canvas.requestPointerLock?.()?.catch?.(() => {}); } catch { /* Le clavier reste disponible. */ }
+          }
         }
         if (event.button === 2) this.pressed.add('Mouse2');
         this.lastDevice = 'mouse';
@@ -452,6 +462,7 @@
         event.preventDefault();
       };
       const end = event => {
+        if (event.changedTouches && ![...event.changedTouches].some(touch => touch.identifier === active)) return;
         active = null;
         this.touchX = 0;
         this.touchY = 0;
@@ -463,6 +474,7 @@
       stick.addEventListener('touchend', end, { passive: false });
       stick.addEventListener('touchcancel', end, { passive: false });
       $$('#touch-controls button').forEach(button => button.addEventListener('pointerdown', event => {
+        if (this.getGame()?.mode !== 'playing') return;
         this.pressed.add(`Touch:${button.dataset.action}`);
         this.lastDevice = 'touch';
         event.preventDefault();
@@ -495,6 +507,19 @@
       return codes.some(code => this.keys.has(code));
     }
 
+    reset() {
+      this.keys.clear();
+      this.pressed.clear();
+      this.turn = 0;
+      this.touchX = 0;
+      this.touchY = 0;
+      const knob = $('#touch-stick i');
+      if (knob) knob.style.transform = '';
+      const pad = connectedGamepad();
+      this.gamepadHeld.clear();
+      for (const index of [0, 1, 2, 3, 4, 9]) this.gamepadHeld.set(index, pad?.buttons[index]?.pressed === true);
+    }
+
     take(...codes) {
       const hit = codes.some(code => this.pressed.has(code));
       codes.forEach(code => this.pressed.delete(code));
@@ -502,15 +527,18 @@
     }
 
     pollGamepad() {
-      const gamepad = navigator.getGamepads?.()[0];
-      if (!gamepad) return { moveX: 0, moveY: 0, turn: 0, run: false };
+      const gamepad = connectedGamepad();
+      if (!gamepad) {
+        this.gamepadHeld.clear();
+        return { moveX: 0, moveY: 0, turn: 0, run: false };
+      }
       const mapping = new Map([[0, 'Pad:interact'], [1, 'Pad:signal'], [2, 'Pad:call'], [3, 'Pad:flash'], [4, 'Pad:lamp'], [9, 'Pad:pause']]);
       for (const [index, code] of mapping) {
         const held = gamepad.buttons[index]?.pressed === true;
-        if (held && !this.gamepadHeld.get(index)) this.pressed.add(code);
+        if (held && !this.gamepadHeld.get(index) && this.getGame()?.mode === 'playing') this.pressed.add(code);
         this.gamepadHeld.set(index, held);
       }
-      this.lastDevice = 'gamepad';
+      if (gamepad.buttons.some(button => button.pressed) || gamepad.axes.some(axis => Math.abs(axis) > .18)) this.lastDevice = 'gamepad';
       return {
         moveX: Math.abs(gamepad.axes[0] || 0) > .18 ? gamepad.axes[0] : 0,
         moveY: Math.abs(gamepad.axes[1] || 0) > .18 ? gamepad.axes[1] : 0,
@@ -563,6 +591,7 @@
     }
 
     loadChapter(index, candidate = null, announce = true) {
+      this.input.reset();
       const state = candidate ? this.storage.normalizeSave(candidate) : null;
       this.level = clone(Data.CHAPTERS[index]);
       this.chapterIndex = index;
@@ -731,17 +760,18 @@
 
     update(dt) {
       const gamepad = this.input.pollGamepad();
+      if (this.mode !== 'playing') return;
       if (this.input.take('Escape', 'Pad:pause', 'Touch:pause')) {
         this.togglePause();
         return;
       }
-      if (this.mode !== 'playing') return;
       if (this.input.take('Tab', 'KeyJ')) {
         this.openJournal();
         return;
       }
 
       this.elapsed += dt;
+      this.flashTime = Math.max(0, this.flashTime - dt * 1.68);
       this.callCooldown = Math.max(0, this.callCooldown - dt);
       this.signalCooldown = Math.max(0, this.signalCooldown - dt);
       this.hitClock = Math.max(0, this.hitClock - dt);
@@ -803,8 +833,10 @@
       } else if (projector.link < 22) this.aziz.corruption = clamp(this.aziz.corruption + dt * .08, 0, 100);
 
       this.updateEnemies(dt, difficulty);
+      if (this.mode !== 'playing') return;
       this.updateDirector(dt, difficulty);
       this.checkExit();
+      if (this.mode !== 'playing') return;
       this.updateHud();
       this.audio.update(this.elapsed, this.director.pressure, this.aziz.wake, this.aziz.corruption);
       this.saveClock += dt;
@@ -861,12 +893,14 @@
         this.unlock('archiviste', this.profile.archives.length === 18);
         this.director.grace = Math.max(this.director.grace, 5);
       } else if (object.type === 'oil') {
+        if (this.player.battery >= 100) { this.say('La réserve d’huile est pleine. Le bidon reste ici.', 2); return; }
         object.done = true;
         this.completedIds.add(object.id);
         const gain = 34 * Data.DIFFICULTIES[this.profile.difficulty].resourceGain;
         this.player.battery = clamp(this.player.battery + gain, 0, 100);
         this.say(`Huile récupérée · lampe ${Math.ceil(this.player.battery)}%`, 1.8);
       } else if (object.type === 'flash') {
+        if (this.player.flashes >= 6) { this.say('Vous portez déjà six plaques. Celle-ci reste ici.', 2); return; }
         object.done = true;
         this.completedIds.add(object.id);
         const recovered = Math.random() <= Data.DIFFICULTIES[this.profile.difficulty].resourceGain;
@@ -927,6 +961,7 @@
         return;
       }
       if (this.level.mechanic === 'channel') {
+        object.progress = 0;
         this.ritual = { id: object.id, duration: access.rule.duration, remaining: access.rule.duration };
         this.say('Maintenez la position. Aziz concentre le projecteur…', 2.4);
         return;
@@ -952,6 +987,10 @@
         return;
       }
       if (this.level.mechanic === 'response') {
+        if (this.callCooldown > 0) {
+          this.say(`Aziz reprend son souffle · ${this.callCooldown.toFixed(1)} s avant de révéler le souvenir.`, 2);
+          return;
+        }
         this.challenge = { type: 'memory', objectId: object.id, remaining: 5 };
         this.say(`${object.label} apparaît. Appelez Aziz maintenant [F].`, 4, true);
       }
@@ -1003,8 +1042,8 @@
       const object = this.level.objects.find(item => item.id === this.ritual.id);
       const access = canOperateObjective(this.level.kind, this.aziz);
       const distance = object ? Math.hypot(object.x - this.player.x, object.y - this.player.y) : 99;
-      if (!object || distance > 1.65 || !access.ok || !this.hasLineOfSight(this.player.x, this.player.y, object.x, object.y)) {
-        if (object) object.progress = Math.max(0, (object.progress || 0) - dt * .75);
+      if (!object || distance > 1.65 || !access.ok || this.lightAt(object.x, object.y).projector <= .02) {
+        if (object) object.progress = 0;
         this.ritual = null;
         meter.classList.remove('visible');
         this.say('Le faisceau s’est rompu. Reprenez la position.', 2);
@@ -1073,7 +1112,7 @@
       const line = altered ? '« Je suis là… ouvre le contre-jour. »' :
         this.aziz.trust >= 68 ? '« Je te vois. Garde le rythme, je tiens la lumière. »' :
         '« Je suis là… la manivelle résiste. »';
-      this.say(line, 2.8, true);
+      this.say(line, 2.8, 'speech');
       this.audio.voice(line.replace(/[«»]/g, ''), altered);
       this.audio.noise(.18, .11);
     }
@@ -1224,7 +1263,7 @@
           if (light.total > .08) shouldMove = false;
         } else if (enemy.type === 'scarabs') {
           chase = distance < definition.sense * difficulty.enemySense;
-          if (distance < 2.1) {
+          if (distance < 2.1 && lineOfSight) {
             this.player.battery = clamp(this.player.battery - dt * 7.5 * difficulty.battery, 0, 100);
             if (this.player.battery <= 0) this.player.lampOn = false;
           }
@@ -1267,7 +1306,7 @@
 
         const perceived = lineOfSight ? clamp(1 - distance / 7, 0, 1) : clamp(1 - distance / 2.5, 0, .35);
         this.danger = Math.max(this.danger, perceived);
-        if (distance < .52 && enemy.stun <= 0 && this.hitClock <= 0) {
+        if (distance < .52 && lineOfSight && enemy.stun <= 0 && this.hitClock <= 0) {
           this.player.health = clamp(this.player.health - definition.damage * difficulty.damage, 0, 100);
           this.player.calm = clamp(this.player.calm - 28, 0, 100);
           this.stats.hits++;
@@ -1352,6 +1391,8 @@
 
     finish(key) {
       this.mode = 'ending';
+      this.input.reset();
+      document.exitPointerLock?.();
       const ending = Data.ENDINGS[key];
       $('#ending-title').textContent = ending.title;
       $('#ending-text').textContent = ending.text;
@@ -1368,6 +1409,7 @@
       this.storage.clear();
       this.audio.suspend(true);
       updateContinueButton();
+      syncModalState();
     }
 
     unlock(id, condition) {
@@ -1384,20 +1426,26 @@
         return;
       }
       if (this.mode === 'playing') {
+        this.input.reset();
         this.mode = 'paused';
         this.audio.suspend(true);
         $('#pause-overlay').classList.add('open');
+        syncModalState();
         $('#pause-overlay [data-pause-action="resume"]').focus();
         document.exitPointerLock?.();
       } else if (this.mode === 'paused') {
+        this.input.reset();
         this.mode = 'playing';
         this.audio.suspend(false);
         $('#pause-overlay').classList.remove('open');
+        syncModalState();
         this.canvas.focus();
       }
+      syncModalState();
     }
 
     openJournal() {
+      this.input.reset();
       this.mode = 'paused';
       this.audio.suspend(true);
       $('#pause-overlay').classList.remove('open');
@@ -1405,12 +1453,14 @@
       openPanel('journal', 'game');
     }
 
-    say(text, seconds = 2, important = false) {
+    say(text, seconds = 2, kind = 'gameplay') {
+      if (kind === 'speech' && this.profile.options.subtitles === false) return;
       const toast = $('#toast');
       toast.textContent = text;
       toast.classList.add('visible');
       this.toastTimer = seconds;
-      if (important && this.profile.options.subtitles === false) toast.textContent = '';
+      // Les indices, archives et résultats d’action restent toujours lisibles.
+      // Le réglage des sous-titres s’applique seulement aux répliques parlées.
     }
 
     updateHud() {
@@ -1667,9 +1717,9 @@
         }
       }
 
-      const objects = this.level.objects.filter(object => !object.done).map(object => ({
+      const objects = this.level.objects.filter(object => !object.done || !['archive', 'oil', 'flash'].includes(object.type)).map(object => ({
         ...object,
-        color: object.type === 'archive' ? '#91c4cf' :
+        color: object.done ? '#91b9a1' : object.type === 'archive' ? '#91c4cf' :
           object.type === this.level.kind ? (canOperateObjective(this.level.kind, this.aziz).ok ? '#f4ce73' : '#86633d') : '#aa7d43',
         enemy: false
       }));
@@ -1682,14 +1732,29 @@
         const dy = sprite.y - this.player.y;
         return { ...sprite, distance: Math.hypot(dx, dy), relative: angleDelta(this.player.a, Math.atan2(dy, dx)) };
       }).filter(sprite => Math.abs(sprite.relative) < fov * .68 && sprite.distance < 17)
-        .sort((left, right) => right.distance - left.distance);
+        .map(sprite => ({ ...sprite, cameraDepth: sprite.distance * Math.cos(sprite.relative) }))
+        .sort((left, right) => right.cameraDepth - left.cameraDepth);
 
       for (const sprite of sprites) {
         const screenX = (.5 + sprite.relative / fov) * width;
-        const size = clamp(height / (sprite.distance * .82), 11, height * .9);
-        const rayIndex = clamp(Math.floor(screenX / width * rays), 0, rays - 1);
-        if (this.depth[rayIndex] < sprite.distance - .28) continue;
+        const size = clamp(height / (Math.max(.05, sprite.cameraDepth) * .82), 11, height * .9);
+        const firstRay = Math.max(0, Math.floor((screenX - size * .65 - 30) / width * rays));
+        const lastRay = Math.min(rays - 1, Math.ceil((screenX + size * .65 + 30) / width * rays));
         context.save();
+        context.beginPath();
+        let visible = false;
+        let runStart = -1;
+        for (let ray = firstRay; ray <= lastRay + 1; ray++) {
+          const clear = ray <= lastRay && this.depth[ray] + .04 >= sprite.cameraDepth;
+          if (clear && runStart < 0) runStart = ray;
+          if (!clear && runStart >= 0) {
+            context.rect(runStart * width / rays, 0, (ray - runStart) * width / rays, height);
+            visible = true;
+            runStart = -1;
+          }
+        }
+        if (!visible) { context.restore(); continue; }
+        context.clip();
         context.globalAlpha = clamp(1 - sprite.distance / 19, .16, 1);
         context.translate(screenX, height / 2 + size * .08);
         if (sprite.type === 'exit') {
@@ -1716,7 +1781,6 @@
         context.fillRect(-3, 0, width + 6, height);
       }
       if (this.flashTime > 0) {
-        this.flashTime = Math.max(0, this.flashTime - .028);
         context.fillStyle = `rgba(255,239,197,${clamp(this.flashTime * 3.8, 0, 1)})`;
         context.fillRect(-3, 0, width + 6, height);
       }
@@ -1742,6 +1806,9 @@
   window.AZIZ = { Data, Mechanics, runtime, Storage, Game };
   let lastFocused = null;
   let deferredInstall = null;
+  let pendingConfirmation = null;
+  let confirmationFocus = null;
+  let optionsSection = 'display';
   storage.onDegraded = () => {
     $('#storage-warning').hidden = false;
     if (game && ['playing', 'paused'].includes(game.mode)) {
@@ -1750,12 +1817,57 @@
   };
   if (storage.degraded) queueMicrotask(storage.onDegraded);
 
+  function syncModalState() {
+    const overlays = $$('.overlay.open');
+    const active = overlays.at(-1);
+    $('#title-screen').inert = !!active;
+    $('#game-screen').inert = !!active;
+    $$('.overlay').forEach(overlay => { overlay.inert = !!active && overlay !== active; });
+  }
+
+  function requestConfirmation(title, text, action, callback) {
+    pendingConfirmation = callback;
+    confirmationFocus = document.activeElement;
+    $('#confirm-title').textContent = title;
+    $('#confirm-text').textContent = text;
+    $('#confirm-accept').textContent = action;
+    $('#confirm-overlay').classList.add('open');
+    input.reset();
+    syncModalState();
+    $('#confirm-cancel').focus();
+  }
+
+  function closeConfirmation(accepted = false) {
+    const callback = pendingConfirmation;
+    pendingConfirmation = null;
+    $('#confirm-overlay').classList.remove('open');
+    syncModalState();
+    input.reset();
+    if (accepted) callback?.();
+    else confirmationFocus?.focus?.();
+  }
+
+  function formatSaveSummary(save) {
+    if (!save) return 'Votre prochaine expédition commence dans la Chambre des noms.';
+    const chapter = Data.CHAPTERS[save.chapterIndex];
+    const completed = chapter.objects.filter(object => object.type === chapter.kind &&
+      (save.completedIds.includes(object.id) || save.objectStates[object.id]?.done)).length;
+    const date = save.savedAt ? new Date(save.savedAt) : null;
+    const time = date && Number.isFinite(date.getTime()) ? ` · ${new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(date)}` : '';
+    return `${chapter.title} · ${Data.DIFFICULTIES[profile.difficulty].name} · ${completed}/${chapter.target} objectifs · ${formatDuration(save.elapsed)}${time}`;
+  }
+
   function applyOptions() {
+    document.documentElement.classList.toggle('large-text', profile.options.largeText);
     document.body.classList.toggle('reduce-motion', profile.options.reduceMotion);
     document.body.classList.toggle('large-text', profile.options.largeText);
     document.body.classList.toggle('high-contrast', profile.options.highContrast);
     document.body.classList.toggle('direction-cues', profile.options.directionCues);
-    if (game) game.resize(true);
+    if (audio.master) audio.master.gain.value = profile.options.volume * .24;
+    if (game) {
+      game.resize();
+      if (game.level && game.mode === 'paused') game.render();
+    }
   }
 
   function updateContinueButton() {
@@ -1763,29 +1875,42 @@
     const save = storage.getSave();
     button.disabled = !save;
     button.textContent = save ? `Continuer · chapitre ${save.chapterIndex + 1}` : 'Continuer';
+    $('#campaign-summary').textContent = formatSaveSummary(save);
   }
 
   function showTitle() {
-    if (game?.level && game.mode !== 'ending') game.save(true);
+    if (game?.level && ['playing', 'paused'].includes(game.mode)) game.save(true);
     if (game) game.mode = 'title';
     audio.suspend(true);
     $('#game-screen').classList.remove('active');
     $('#title-screen').classList.add('active');
     $$('.overlay').forEach(overlay => overlay.classList.remove('open'));
+    input.reset();
+    syncModalState();
     document.exitPointerLock?.();
     updateContinueButton();
-    $('[data-menu="new"]').focus();
+    $(`[data-menu="${storage.getSave() ? 'continue' : 'campaign'}"]`).focus();
   }
 
   function begin(index = 0, save = null) {
     audio.ensure();
+    $$('.overlay').forEach(overlay => overlay.classList.remove('open'));
+    input.reset();
+    syncModalState();
     game ||= new Game(canvas, storage, profile, input, audio);
     game.start(index, save);
+    audio.suspend(false);
   }
 
   function showPrologue() {
     lastFocused = document.activeElement;
+    $('#panel').classList.remove('open');
+    const currentSave = storage.getSave();
+    $('#new-campaign-warning').hidden = !currentSave;
+    if (currentSave) $('#new-campaign-warning').textContent = `Expédition en cours : ${formatSaveSummary(currentSave)}. Descendre dans le temple remplacera cette progression. Vos archives, succès et fins seront conservés.`;
     $('#prologue-overlay').classList.add('open');
+    input.reset();
+    syncModalState();
     $('#begin-expedition').focus();
   }
 
@@ -1811,15 +1936,29 @@
     const box = $('#panel-content');
     lastFocused = document.activeElement;
     panel.dataset.returnTo = returnTo;
+    panel.dataset.kind = kind;
+    panel.dataset.parent = kind === 'chapters' ? 'campaign' : '';
     panel.classList.add('open');
     box.replaceChildren();
+    input.reset();
     if (returnTo === 'pause' || returnTo === 'game') {
       if (game) game.mode = 'paused';
       audio.suspend(true);
       $('#pause-overlay').classList.remove('open');
     }
 
-    if (kind === 'chapters') {
+    if (kind === 'campaign') {
+      title.textContent = 'Campagne';
+      const summary = document.createElement('p');
+      summary.className = 'journal-lead';
+      summary.textContent = formatSaveSummary(storage.getSave());
+      const actions = document.createElement('div');
+      actions.className = 'campaign-actions';
+      actions.innerHTML = '<button data-campaign="new" class="primary">Nouvelle expédition</button><button data-campaign="chapters">Rejouer un chapitre</button>';
+      box.append(summary, actions);
+      $('[data-campaign="new"]').onclick = showPrologue;
+      $('[data-campaign="chapters"]').onclick = () => openPanel('chapters');
+    } else if (kind === 'chapters') {
       title.textContent = 'Chapitres';
       const grid = document.createElement('div');
       grid.className = 'panel-grid';
@@ -1833,14 +1972,17 @@
         paragraph.textContent = button.disabled ? 'Verrouillé' : chapter.intro;
         button.append(heading, paragraph);
         button.addEventListener('click', () => {
-          closePanel(false);
-          begin(index);
+          const launch = () => { closePanel(false); begin(index); };
+          if (storage.getSave()) requestConfirmation('Rejouer ce chapitre ?',
+            `Expédition en cours : ${formatSaveSummary(storage.getSave())}. Rejouer ${chapter.title} remplacera cette progression. Votre collection reste conservée. Vous pouvez exporter la campagne depuis Sauvegardes.`,
+            'Rejouer le chapitre', launch);
+          else launch();
         });
         grid.append(button);
       });
       box.append(grid);
     } else if (kind === 'archives') {
-      title.textContent = 'Archives & succès';
+      title.textContent = 'Collection';
       const archivesHeading = document.createElement('h3');
       archivesHeading.textContent = `Archives ${profile.archives.length}/18`;
       const archivesGrid = document.createElement('div');
@@ -1852,21 +1994,69 @@
       achievementGrid.className = 'panel-grid';
       Data.ACHIEVEMENTS.forEach(achievement => appendCard(achievementGrid, achievement.title, profile.achievements.includes(achievement.id) ? achievement.description : 'Verrouillé', !profile.achievements.includes(achievement.id)));
       box.append(archivesHeading, archivesGrid, achievementHeading, achievementGrid);
+      const endingsHeading = document.createElement('h3');
+      endingsHeading.textContent = `Fins ${profile.endings.length}/${Object.keys(Data.ENDINGS).length}`;
+      const endingsGrid = document.createElement('div');
+      endingsGrid.className = 'panel-grid';
+      Object.entries(Data.ENDINGS).forEach(([key, ending]) => appendCard(endingsGrid,
+        profile.endings.includes(key) ? ending.title : 'Fin non découverte',
+        profile.endings.includes(key) ? ending.text : 'Poursuivez votre relation avec Aziz pour découvrir un autre dénouement.',
+        !profile.endings.includes(key)));
+      box.append(endingsHeading, endingsGrid);
     } else if (kind === 'options') {
       title.textContent = 'Options';
       box.innerHTML = `
-        <label class="option-row"><span>Difficulté<small id="difficulty-description"></small></span><select id="opt-difficulty">${Object.entries(Data.DIFFICULTIES).map(([key, value]) => `<option value="${key}" ${profile.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label>
-        <label class="option-row">Volume<input id="opt-volume" type="range" min="0" max="1" step=".05" value="${profile.options.volume}"></label>
-        <label class="option-row">Sensibilité<input id="opt-sensitivity" type="range" min=".3" max="2" step=".1" value="${profile.options.sensitivity}"></label>
-        <label class="option-row">Champ de vision<input id="opt-fov" type="range" min="55" max="85" value="${profile.options.fov}"></label>
-        <label class="option-row">Qualité du rendu<select id="opt-quality"><option value="auto">Automatique</option><option value="low">Économie mobile</option><option value="high">Haute</option></select></label>
-        ${[['subtitles', 'Sous-titres'], ['voices', 'Voix synthétiques françaises'], ['directionCues', 'Repères directionnels textuels'], ['reduceMotion', 'Réduction des mouvements'], ['largeText', 'Texte agrandi'], ['highContrast', 'Contraste renforcé']].map(([key, label]) => `<label class="option-row">${label}<input id="opt-${key}" type="checkbox" ${profile.options[key] ? 'checked' : ''}></label>`).join('')}`;
+        <nav class="options-tabs" role="tablist" aria-label="Catégories des options">${[['display', 'Image'], ['audio', 'Son'], ['access', 'Accessibilité'], ['controls', 'Jeu et commandes']].map(([key, label]) => `<button type="button" id="tab-${key}" role="tab" data-options-tab="${key}" aria-controls="options-${key}">${label}</button>`).join('')}</nav>
+        <section id="options-display" role="tabpanel" aria-labelledby="tab-display" data-options-section="display">
+          <label class="option-row"><span>Champ de vision<output id="value-fov" for="opt-fov"></output></span><input id="opt-fov" type="range" min="55" max="85" value="${profile.options.fov}"></label>
+          <label class="option-row">Qualité du rendu<select id="opt-quality"><option value="auto">Automatique</option><option value="low">Économie mobile</option><option value="high">Haute</option></select></label>
+        </section>
+        <section id="options-audio" role="tabpanel" aria-labelledby="tab-audio" data-options-section="audio">
+          <label class="option-row"><span>Volume<output id="value-volume" for="opt-volume"></output></span><input id="opt-volume" type="range" min="0" max="1" step=".05" value="${profile.options.volume}"></label>
+          ${[['subtitles', 'Sous-titres des voix'], ['voices', 'Voix synthétiques françaises']].map(([key, label]) => `<label class="option-row">${label}<input id="opt-${key}" type="checkbox" ${profile.options[key] ? 'checked' : ''}></label>`).join('')}
+          <p class="option-help">Les indices et messages de jeu restent visibles, même sans sous-titres. Les voix disponibles dépendent de votre appareil.</p>
+        </section>
+        <section id="options-access" role="tabpanel" aria-labelledby="tab-access" data-options-section="access">
+          ${[['directionCues', 'Repères directionnels textuels'], ['reduceMotion', 'Réduction des mouvements'], ['largeText', 'Texte agrandi'], ['highContrast', 'Contraste renforcé']].map(([key, label]) => `<label class="option-row">${label}<input id="opt-${key}" type="checkbox" ${profile.options[key] ? 'checked' : ''}></label>`).join('')}
+        </section>
+        <section id="options-controls" role="tabpanel" aria-labelledby="tab-controls" data-options-section="controls">
+          <label class="option-row"><span>Difficulté<small id="difficulty-description"></small></span><select id="opt-difficulty">${Object.entries(Data.DIFFICULTIES).map(([key, value]) => `<option value="${key}" ${profile.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label>
+          <label class="option-row"><span>Sensibilité<output id="value-sensitivity" for="opt-sensitivity"></output></span><input id="opt-sensitivity" type="range" min=".3" max="2" step=".1" value="${profile.options.sensitivity}"></label>
+          <p class="option-help">ZQSD / WASD : déplacement · Maj : courir · Souris : regarder · E : interagir · F : appeler Aziz · C / clic droit : signal · Espace : flash · L : lampe · Échap : pause.</p>
+          <p class="option-help">Manette : haut / bas pour parcourir, gauche / droite pour régler une valeur, A / Croix pour valider, B / Rond pour revenir.</p>
+        </section>`;
       $('#opt-quality').value = profile.options.quality;
       const updateDescription = () => {
         $('#difficulty-description').textContent = Data.DIFFICULTIES[$('#opt-difficulty').value].description;
+        $('#value-volume').textContent = `${Math.round(profile.options.volume * 100)} %`;
+        $('#value-fov').textContent = `${profile.options.fov}°`;
+        $('#value-sensitivity').textContent = `${profile.options.sensitivity.toFixed(1)}×`;
       };
       updateDescription();
-      box.querySelectorAll('input, select').forEach(element => element.addEventListener('change', () => {
+      const selectSection = key => {
+        optionsSection = key;
+        box.querySelectorAll('[data-options-section]').forEach(section => { section.hidden = section.dataset.optionsSection !== key; });
+        box.querySelectorAll('[data-options-tab]').forEach(button => {
+          const selected = button.dataset.optionsTab === key;
+          button.setAttribute('aria-selected', String(selected));
+          button.tabIndex = selected ? 0 : -1;
+        });
+      };
+      box.querySelectorAll('[data-options-tab]').forEach(button => {
+        button.onclick = () => selectSection(button.dataset.optionsTab);
+        button.addEventListener('keydown', event => {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const tabs = [...box.querySelectorAll('[data-options-tab]')];
+          const index = tabs.indexOf(button);
+          const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowLeft' ? -1 : 1) + tabs.length) % tabs.length;
+          selectSection(tabs[next].dataset.optionsTab);
+          tabs[next].focus();
+        });
+      });
+      selectSection(optionsSection);
+      const updateOptions = () => {
         profile.difficulty = $('#opt-difficulty').value;
         profile.options.volume = +$('#opt-volume').value;
         profile.options.sensitivity = +$('#opt-sensitivity').value;
@@ -1876,13 +2066,19 @@
         storage.saveProfile(profile);
         applyOptions();
         updateDescription();
-      }));
+      };
+      box.querySelectorAll('input, select').forEach(element => {
+        element.addEventListener('change', updateOptions);
+        if (element.type === 'range') element.addEventListener('input', updateOptions);
+      });
     } else if (kind === 'save') {
-      title.textContent = 'Importer / exporter';
+      title.textContent = 'Sauvegardes';
+      if (game?.level && returnTo === 'pause') game.save(true);
       const explanation = document.createElement('p');
       explanation.textContent = 'Le dossier JSON conserve campagne, options, archives, succès et fins. Une collection sans campagne active peut aussi être transférée.';
       const area = document.createElement('textarea');
       area.id = 'save-json';
+      area.setAttribute('aria-label', 'Dossier de sauvegarde JSON');
       area.className = 'save-area';
       area.spellcheck = false;
       area.value = storage.export();
@@ -1918,14 +2114,25 @@
       };
       $('#import-save').onclick = () => {
         try {
-          const imported = storage.import(area.value);
-          Object.assign(profile, imported.profile);
-          if (!profile.achievements.includes('collection')) profile.achievements.push('collection');
-          storage.saveProfile(profile);
-          applyOptions();
-          updateContinueButton();
-          status.textContent = imported.save ? 'Campagne importée. Le bouton Continuer est prêt.' :
-            storage.getSave() ? 'Collection et options importées · campagne locale conservée.' : 'Collection et options importées.';
+          const importText = area.value;
+          const preview = storage.prepareImport(importText);
+          const commitImport = () => {
+            const imported = storage.import(importText);
+            Object.assign(profile, imported.profile);
+            if (!profile.achievements.includes('collection')) profile.achievements.push('collection');
+            storage.saveProfile(profile);
+            // Un ancien objet Game ne doit plus pouvoir réécrire la campagne importée.
+            if (game) { game.mode = 'title'; game.level = null; game.ritual = null; game.challenge = null; }
+            applyOptions();
+            showTitle();
+            openPanel('save');
+            $('#save-status').textContent = imported.save ? 'Campagne importée. Le bouton Continuer est prêt.' :
+              storage.getSave() ? 'Collection et options importées · campagne locale conservée.' : 'Collection et options importées.';
+          };
+          if (preview.save && storage.getSave()) requestConfirmation('Remplacer la campagne ?',
+            `Expédition locale : ${formatSaveSummary(storage.getSave())}. Le dossier importé reprend ${Data.CHAPTERS[preview.save.chapterIndex].title} et remplacera votre progression et votre collection locales. Annulez pour exporter d’abord votre sauvegarde actuelle.`,
+            'Importer ce dossier', commitImport);
+          else commitImport();
         } catch (error) {
           status.textContent = error.message;
         }
@@ -1945,29 +2152,43 @@
       for (const threat of Object.values(Data.THREATS)) appendCard(notes, threat.name, threat.behavior);
     }
 
-    requestAnimationFrame(() => $('[data-close]').focus());
+    syncModalState();
+    requestAnimationFrame(() => { if ($$('.overlay.open').at(-1) === panel) $('[data-close]').focus(); });
   }
 
   function closePanel(restoreFocus = true) {
     const panel = $('#panel');
     const returnTo = panel.dataset.returnTo;
+    if (restoreFocus && panel.dataset.parent) {
+      openPanel(panel.dataset.parent, returnTo);
+      return;
+    }
     panel.classList.remove('open');
+    input.reset();
     if (returnTo === 'pause' && game) {
       game.mode = 'paused';
       $('#pause-overlay').classList.add('open');
+      syncModalState();
       $('[data-pause-action="resume"]').focus();
     } else if (returnTo === 'game' && game) {
       game.mode = 'playing';
       audio.suspend(false);
+      syncModalState();
       canvas.focus();
-    } else if (restoreFocus) lastFocused?.focus?.();
+    } else if (restoreFocus) {
+      syncModalState();
+      if (lastFocused?.isConnected && lastFocused.getClientRects().length) lastFocused.focus();
+      else $('[data-menu="campaign"]').focus();
+    }
+    syncModalState();
   }
 
   function trapFocus(event) {
     if (event.key !== 'Tab') return;
     const overlay = $$('.overlay.open').at(-1);
     if (!overlay) return;
-    const focusable = [...overlay.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea, [href], [tabindex]:not([tabindex="-1"])')];
+    const focusable = [...overlay.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea, [href], [tabindex]:not([tabindex="-1"])')]
+      .filter(element => element.tabIndex !== -1 && element.getClientRects().length);
     if (!focusable.length) return;
     const first = focusable[0];
     const last = focusable.at(-1);
@@ -1988,7 +2209,7 @@
   };
 
   function pollUiGamepad() {
-    const pad = navigator.getGamepads?.()[0];
+    const pad = connectedGamepad();
     const overlay = $$('.overlay.open').at(-1);
     const root = overlay || ($('#title-screen').classList.contains('active') ? $('#title-screen') : null);
     if (pad) {
@@ -2000,21 +2221,46 @@
       const downEdge = uiGamepadEdge('down', down);
       const leftEdge = uiGamepadEdge('left', left);
       const rightEdge = uiGamepadEdge('right', right);
-      const moveBack = upEdge || leftEdge;
-      const moveForward = downEdge || rightEdge;
+      let moveBack = upEdge || leftEdge;
+      let moveForward = downEdge || rightEdge;
       const confirm = uiGamepadEdge('confirm', pad.buttons[0]?.pressed === true);
       const cancel = uiGamepadEdge('cancel', pad.buttons[1]?.pressed === true);
+      const pause = uiGamepadEdge('pause', pad.buttons[9]?.pressed === true);
       if (root) {
+        const focused = document.activeElement;
+        if ((leftEdge || rightEdge) && root.contains(focused)) {
+          const direction = rightEdge ? 1 : -1;
+          if (focused.matches('input[type="range"]')) {
+            if (direction > 0) focused.stepUp();
+            else focused.stepDown();
+            focused.dispatchEvent(new Event('change', { bubbles: true }));
+            moveBack = upEdge;
+            moveForward = downEdge;
+          } else if (focused.matches('select')) {
+            focused.selectedIndex = clamp(focused.selectedIndex + direction, 0, focused.options.length - 1);
+            focused.dispatchEvent(new Event('change', { bubbles: true }));
+            moveBack = upEdge;
+            moveForward = downEdge;
+          } else if (focused.matches('[data-options-tab]')) {
+            const tabs = [...root.querySelectorAll('[data-options-tab]')];
+            const next = tabs[(tabs.indexOf(focused) + direction + tabs.length) % tabs.length];
+            next.click();
+            next.focus();
+            moveBack = upEdge;
+            moveForward = downEdge;
+          }
+        }
         const focusable = [...root.querySelectorAll('button:not([disabled]):not([hidden]),input:not([disabled]),select:not([disabled]),textarea,[tabindex]:not([tabindex="-1"])')]
-          .filter(element => element.getClientRects().length);
+          .filter(element => element.tabIndex !== -1 && element.getClientRects().length);
         if ((moveBack || moveForward) && focusable.length) {
           const current = focusable.indexOf(document.activeElement);
           const delta = moveBack ? -1 : 1;
           focusable[(current < 0 ? 0 : current + delta + focusable.length) % focusable.length].focus();
         }
         if (confirm && root.contains(document.activeElement)) document.activeElement.click?.();
-        if (cancel) {
-          if ($('#prologue-overlay').classList.contains('open')) $('#cancel-expedition').click();
+        if (cancel || pause) {
+          if ($('#confirm-overlay').classList.contains('open')) closeConfirmation();
+          else if ($('#prologue-overlay').classList.contains('open')) $('#cancel-expedition').click();
           else if ($('#panel').classList.contains('open')) closePanel();
           else if ($('#pause-overlay').classList.contains('open')) game?.togglePause();
           else if ($('#ending-overlay').classList.contains('open')) showTitle();
@@ -2040,8 +2286,10 @@
   };
   $('#cancel-expedition').onclick = () => {
     $('#prologue-overlay').classList.remove('open');
-    lastFocused?.focus?.();
+    openPanel('campaign');
   };
+  $('#confirm-cancel').onclick = () => closeConfirmation();
+  $('#confirm-accept').onclick = () => closeConfirmation(true);
   $('[data-close]').onclick = () => closePanel();
   $('#panel').addEventListener('click', event => {
     if (event.target === $('#panel')) closePanel();
@@ -2050,16 +2298,27 @@
     const action = button.dataset.pauseAction;
     if (action === 'resume') game.togglePause();
     if (action === 'journal') openPanel('journal', 'pause');
+    if (['options', 'archives', 'save'].includes(action)) openPanel(action, 'pause');
     if (action === 'checkpoint') {
-      $('#pause-overlay').classList.remove('open');
-      game.loadChapter(game.checkpoint.chapterIndex, game.checkpoint, true);
-      game.mode = 'playing';
-      canvas.focus();
+      requestConfirmation('Revenir au point de contrôle ?',
+        'La progression depuis ce point de contrôle sera perdue. Votre collection reste conservée.',
+        'Revenir au point de contrôle', () => {
+          $('#pause-overlay').classList.remove('open');
+          game.loadChapter(game.checkpoint.chapterIndex, game.checkpoint, true);
+          game.mode = 'playing';
+          audio.suspend(false);
+          input.reset();
+          syncModalState();
+          canvas.focus();
+        });
     }
     if (action === 'title') showTitle();
   });
   $('#ending-return').onclick = showTitle;
-  addEventListener('resize', () => game?.resize(true));
+  addEventListener('resize', () => {
+    game?.resize(true);
+    if (game?.level && game.mode === 'paused') game.render();
+  });
   addEventListener('beforeunload', () => {
     if (game && ['playing', 'paused'].includes(game.mode)) game.save(true);
   });
@@ -2067,16 +2326,37 @@
     if ($('#game-screen').classList.contains('active')) event.preventDefault();
   });
   addEventListener('keydown', event => {
-    trapFocus(event);
-    if (event.key === 'Escape' && $('#prologue-overlay').classList.contains('open')) {
+    if (event.key === 'Escape' && event.repeat) {
       event.preventDefault();
       event.stopImmediatePropagation();
-      $('#prologue-overlay').classList.remove('open');
-      lastFocused?.focus?.();
+      return;
+    }
+    trapFocus(event);
+    if (event.key === 'Escape' && $('#confirm-overlay').classList.contains('open')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      closeConfirmation();
+    } else if (event.key === 'Escape' && $('#prologue-overlay').classList.contains('open')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      $('#cancel-expedition').click();
     } else if (event.key === 'Escape' && $('#panel').classList.contains('open')) {
       event.preventDefault();
       event.stopImmediatePropagation();
       closePanel();
+    } else if (event.key === 'Escape' && game?.mode === 'paused' && $('#pause-overlay').classList.contains('open')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      game.togglePause();
+    } else if (['ArrowUp', 'ArrowDown'].includes(event.key) && event.target?.matches?.('button')) {
+      const root = $$('.overlay.open').at(-1) || ($('#title-screen').classList.contains('active') ? $('#title-screen') : null);
+      if (root?.contains(event.target)) {
+        const focusable = [...root.querySelectorAll('button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea')]
+          .filter(element => element.tabIndex !== -1 && element.getClientRects().length);
+        const index = focusable.indexOf(event.target);
+        const next = (index + (event.key === 'ArrowDown' ? 1 : -1) + focusable.length) % focusable.length;
+        if (focusable[next]) { event.preventDefault(); focusable[next].focus(); }
+      }
     }
   }, true);
   document.addEventListener('pointerlockchange', () => {
@@ -2106,5 +2386,8 @@
   }
   const testMode = new URLSearchParams(location.search).get('test');
   if (testMode === 'game') begin(0);
-  else document.documentElement.dataset.testReady = 'true';
+  else {
+    document.documentElement.dataset.testReady = 'true';
+    $(`[data-menu="${storage.getSave() ? 'continue' : 'campaign'}"]`).focus();
+  }
 })();

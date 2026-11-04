@@ -1,0 +1,1200 @@
+[
+  {
+    "chapter": "noms",
+    "title": "I. La Chambre des noms",
+    "width": 23,
+    "height": 23,
+    "totalWalkable": 323,
+    "reachable": 323,
+    "unreachableOpen": 0,
+    "degreeCounts": [
+      0,
+      15,
+      121,
+      139,
+      48
+    ],
+    "exitDistance": 39,
+    "objects": [
+      {
+        "id": "noms-objective-1",
+        "type": "seal",
+        "label": "Sceau du levant",
+        "x": 11.5,
+        "y": 7.5,
+        "startDistance": 16,
+        "degree": 4
+      },
+      {
+        "id": "noms-objective-2",
+        "type": "seal",
+        "label": "Sceau du couchant",
+        "x": 9.5,
+        "y": 8.5,
+        "startDistance": 15,
+        "degree": 2
+      },
+      {
+        "id": "registre",
+        "type": "archive",
+        "label": "Le registre de l’expédition",
+        "x": 18.5,
+        "y": 11.5,
+        "startDistance": 27,
+        "degree": 2
+      },
+      {
+        "id": "cuivre",
+        "type": "archive",
+        "label": "Le disque de cuivre",
+        "x": 17.5,
+        "y": 2.5,
+        "startDistance": 19,
+        "degree": 2
+      },
+      {
+        "id": "aziz-lettre",
+        "type": "archive",
+        "label": "Lettre du contremaître",
+        "x": 20.5,
+        "y": 16.5,
+        "startDistance": 34,
+        "degree": 3
+      },
+      {
+        "id": "noms-oil-5",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 18.5,
+        "y": 15.5,
+        "startDistance": 31,
+        "degree": 4,
+        "text": "Dix-neuf ombres ont franchi le seuil."
+      },
+      {
+        "id": "noms-flash-6",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 5.5,
+        "y": 12.5,
+        "startDistance": 15,
+        "degree": 2,
+        "text": "Le disque central tourne à rebours."
+      },
+      {
+        "id": "noms-bell-7",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 2.5,
+        "y": 11.5,
+        "startDistance": 11,
+        "degree": 2,
+        "text": "Dix-neuf ombres ont franchi le seuil."
+      },
+      {
+        "id": "noms-inscription-8",
+        "type": "inscription",
+        "label": "Inscription relevée",
+        "x": 2.5,
+        "y": 5.5,
+        "startDistance": 5,
+        "degree": 1,
+        "text": "Le disque central tourne à rebours."
+      },
+      {
+        "id": "noms-door-9",
+        "type": "door",
+        "label": "Seuil de repos",
+        "x": 16.5,
+        "y": 19.5,
+        "startDistance": 33,
+        "degree": 3,
+        "text": "Dix-neuf ombres ont franchi le seuil."
+      },
+      {
+        "id": "noms-oil-10",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 20.5,
+        "y": 11.5,
+        "startDistance": 29,
+        "degree": 2,
+        "text": "Le disque central tourne à rebours."
+      },
+      {
+        "id": "noms-flash-11",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 14.5,
+        "y": 14.5,
+        "startDistance": 26,
+        "degree": 2,
+        "text": "Dix-neuf ombres ont franchi le seuil."
+      },
+      {
+        "id": "noms-bell-12",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 18.5,
+        "y": 14.5,
+        "startDistance": 30,
+        "degree": 3,
+        "text": "Le disque central tourne à rebours."
+      },
+      {
+        "id": "noms-inscription-13",
+        "type": "inscription",
+        "label": "Inscription relevée",
+        "x": 5.5,
+        "y": 8.5,
+        "startDistance": 11,
+        "degree": 3,
+        "text": "Dix-neuf ombres ont franchi le seuil."
+      },
+      {
+        "id": "noms-door-14",
+        "type": "door",
+        "label": "Seuil de repos",
+        "x": 19.5,
+        "y": 13.5,
+        "startDistance": 30,
+        "degree": 3,
+        "text": "Le disque central tourne à rebours."
+      }
+    ],
+    "enemies": [
+      {
+        "id": "noms-ushabti-0",
+        "type": "ushabti",
+        "x": 21.5,
+        "y": 17.5,
+        "startDistance": 36,
+        "distanceToNearestObjective": 20
+      },
+      {
+        "id": "noms-ushabti-1",
+        "type": "ushabti",
+        "x": 17.5,
+        "y": 3.5,
+        "startDistance": 18,
+        "distanceToNearestObjective": 10
+      },
+      {
+        "id": "noms-scarabs-2",
+        "type": "scarabs",
+        "x": 18.5,
+        "y": 16.5,
+        "startDistance": 32,
+        "distanceToNearestObjective": 16
+      }
+    ],
+    "sequence": [
+      "Sceau du levant",
+      "Sceau du couchant"
+    ],
+    "sequentialRoute": null
+  },
+  {
+    "chapter": "miroirs",
+    "title": "II. La Galerie des miroirs",
+    "width": 25,
+    "height": 25,
+    "totalWalkable": 374,
+    "reachable": 374,
+    "unreachableOpen": 0,
+    "degreeCounts": [
+      0,
+      10,
+      164,
+      148,
+      52
+    ],
+    "exitDistance": 43,
+    "objects": [
+      {
+        "id": "miroirs-objective-1",
+        "type": "mirror",
+        "label": "Miroir du chacal",
+        "x": 22.5,
+        "y": 7.5,
+        "startDistance": 27,
+        "degree": 4
+      },
+      {
+        "id": "miroirs-objective-2",
+        "type": "mirror",
+        "label": "Miroir du roseau",
+        "x": 18.5,
+        "y": 20.5,
+        "startDistance": 36,
+        "degree": 3
+      },
+      {
+        "id": "miroirs-objective-3",
+        "type": "mirror",
+        "label": "Miroir du scarabée",
+        "x": 13.5,
+        "y": 13.5,
+        "startDistance": 24,
+        "degree": 2
+      },
+      {
+        "id": "miroirs-objective-4",
+        "type": "mirror",
+        "label": "Miroir de l’ibis",
+        "x": 1.5,
+        "y": 7.5,
+        "startDistance": 6,
+        "degree": 3
+      },
+      {
+        "id": "trois-signaux",
+        "type": "archive",
+        "label": "La règle des trois signaux",
+        "x": 3.5,
+        "y": 16.5,
+        "startDistance": 17,
+        "degree": 2
+      },
+      {
+        "id": "lentille",
+        "type": "archive",
+        "label": "La lentille fêlée",
+        "x": 20.5,
+        "y": 19.5,
+        "startDistance": 37,
+        "degree": 3
+      },
+      {
+        "id": "reflet",
+        "type": "archive",
+        "label": "Le reflet absent",
+        "x": 8.5,
+        "y": 17.5,
+        "startDistance": 27,
+        "degree": 2
+      },
+      {
+        "id": "miroirs-oil-7",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 9.5,
+        "y": 19.5,
+        "startDistance": 26,
+        "degree": 3,
+        "text": "Aucun reflet ne doit regarder le nord."
+      },
+      {
+        "id": "miroirs-flash-8",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 22.5,
+        "y": 13.5,
+        "startDistance": 35,
+        "degree": 2,
+        "text": "Quatre visages, une seule aube."
+      },
+      {
+        "id": "miroirs-bell-9",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 4.5,
+        "y": 9.5,
+        "startDistance": 13,
+        "degree": 2,
+        "text": "Aucun reflet ne doit regarder le nord."
+      },
+      {
+        "id": "miroirs-inscription-10",
+        "type": "inscription",
+        "label": "Inscription relevée",
+        "x": 14.5,
+        "y": 3.5,
+        "startDistance": 15,
+        "degree": 2,
+        "text": "Quatre visages, une seule aube."
+      },
+      {
+        "id": "miroirs-door-11",
+        "type": "door",
+        "label": "Seuil de repos",
+        "x": 17.5,
+        "y": 19.5,
+        "startDistance": 34,
+        "degree": 4,
+        "text": "Aucun reflet ne doit regarder le nord."
+      },
+      {
+        "id": "miroirs-oil-12",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 3.5,
+        "y": 21.5,
+        "startDistance": 22,
+        "degree": 3,
+        "text": "Quatre visages, une seule aube."
+      },
+      {
+        "id": "miroirs-flash-13",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 20.5,
+        "y": 23.5,
+        "startDistance": 41,
+        "degree": 3,
+        "text": "Aucun reflet ne doit regarder le nord."
+      },
+      {
+        "id": "miroirs-bell-14",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 17.5,
+        "y": 20.5,
+        "startDistance": 35,
+        "degree": 3,
+        "text": "Quatre visages, une seule aube."
+      }
+    ],
+    "enemies": [
+      {
+        "id": "miroirs-ushabti-0",
+        "type": "ushabti",
+        "x": 12.5,
+        "y": 5.5,
+        "startDistance": 15,
+        "distanceToNearestObjective": 11
+      },
+      {
+        "id": "miroirs-scarabs-1",
+        "type": "scarabs",
+        "x": 4.5,
+        "y": 21.5,
+        "startDistance": 23,
+        "distanceToNearestObjective": 17
+      },
+      {
+        "id": "miroirs-jackal-2",
+        "type": "jackal",
+        "x": 3.5,
+        "y": 23.5,
+        "startDistance": 24,
+        "distanceToNearestObjective": 18
+      }
+    ],
+    "sequence": [
+      "Miroir du chacal",
+      "Miroir du roseau",
+      "Miroir du scarabée",
+      "Miroir de l’ibis"
+    ],
+    "sequentialRoute": null
+  },
+  {
+    "chapter": "voix",
+    "title": "III. Le Puits des voix",
+    "width": 27,
+    "height": 23,
+    "totalWalkable": 384,
+    "reachable": 384,
+    "unreachableOpen": 0,
+    "degreeCounts": [
+      0,
+      2,
+      172,
+      152,
+      58
+    ],
+    "exitDistance": 43,
+    "objects": [
+      {
+        "id": "voix-objective-1",
+        "type": "echo",
+        "label": "Pierre du souffle",
+        "x": 2.5,
+        "y": 17.5,
+        "startDistance": 17,
+        "degree": 2
+      },
+      {
+        "id": "voix-objective-2",
+        "type": "echo",
+        "label": "Pierre du silence",
+        "x": 18.5,
+        "y": 15.5,
+        "startDistance": 31,
+        "degree": 2
+      },
+      {
+        "id": "voix-objective-3",
+        "type": "echo",
+        "label": "Pierre du soleil",
+        "x": 15.5,
+        "y": 7.5,
+        "startDistance": 20,
+        "degree": 3
+      },
+      {
+        "id": "nom-raye",
+        "type": "archive",
+        "label": "Le nom rayé",
+        "x": 5.5,
+        "y": 16.5,
+        "startDistance": 19,
+        "degree": 2
+      },
+      {
+        "id": "conduit-sept",
+        "type": "archive",
+        "label": "Conduit numéro sept",
+        "x": 8.5,
+        "y": 18.5,
+        "startDistance": 24,
+        "degree": 3
+      },
+      {
+        "id": "scribe",
+        "type": "archive",
+        "label": "L’encre du Scribe",
+        "x": 8.5,
+        "y": 13.5,
+        "startDistance": 19,
+        "degree": 2
+      },
+      {
+        "id": "voix-oil-6",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 18.5,
+        "y": 4.5,
+        "startDistance": 20,
+        "degree": 3,
+        "text": "La première voix n’est jamais celle qui répond."
+      },
+      {
+        "id": "voix-flash-7",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 23.5,
+        "y": 3.5,
+        "startDistance": 24,
+        "degree": 4,
+        "text": "Écoutez le vide entre deux syllabes."
+      },
+      {
+        "id": "voix-bell-8",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 11.5,
+        "y": 2.5,
+        "startDistance": 11,
+        "degree": 3,
+        "text": "La première voix n’est jamais celle qui répond."
+      },
+      {
+        "id": "voix-inscription-9",
+        "type": "inscription",
+        "label": "Inscription relevée",
+        "x": 25.5,
+        "y": 18.5,
+        "startDistance": 41,
+        "degree": 2,
+        "text": "Écoutez le vide entre deux syllabes."
+      },
+      {
+        "id": "voix-door-10",
+        "type": "door",
+        "label": "Seuil de repos",
+        "x": 18.5,
+        "y": 3.5,
+        "startDistance": 19,
+        "degree": 3,
+        "text": "La première voix n’est jamais celle qui répond."
+      },
+      {
+        "id": "voix-oil-11",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 10.5,
+        "y": 13.5,
+        "startDistance": 21,
+        "degree": 2,
+        "text": "Écoutez le vide entre deux syllabes."
+      },
+      {
+        "id": "voix-flash-12",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 6.5,
+        "y": 5.5,
+        "startDistance": 9,
+        "degree": 2,
+        "text": "La première voix n’est jamais celle qui répond."
+      },
+      {
+        "id": "voix-bell-13",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 21.5,
+        "y": 21.5,
+        "startDistance": 40,
+        "degree": 2,
+        "text": "Écoutez le vide entre deux syllabes."
+      },
+      {
+        "id": "voix-inscription-14",
+        "type": "inscription",
+        "label": "Inscription relevée",
+        "x": 23.5,
+        "y": 11.5,
+        "startDistance": 32,
+        "degree": 4,
+        "text": "La première voix n’est jamais celle qui répond."
+      }
+    ],
+    "enemies": [
+      {
+        "id": "voix-scarabs-0",
+        "type": "scarabs",
+        "x": 13.5,
+        "y": 9.5,
+        "startDistance": 20,
+        "distanceToNearestObjective": 4
+      },
+      {
+        "id": "voix-jackal-1",
+        "type": "jackal",
+        "x": 17.5,
+        "y": 11.5,
+        "startDistance": 26,
+        "distanceToNearestObjective": 5
+      },
+      {
+        "id": "voix-scribe-2",
+        "type": "scribe",
+        "x": 24.5,
+        "y": 3.5,
+        "startDistance": 25,
+        "distanceToNearestObjective": 13
+      }
+    ],
+    "sequence": [
+      "Pierre du soleil",
+      "Pierre du souffle",
+      "Pierre du silence"
+    ],
+    "sequentialRoute": [
+      20,
+      23,
+      18,
+      12
+    ],
+    "sequentialWalk": 73
+  },
+  {
+    "chapter": "dormeurs",
+    "title": "IV. La Chambre des dormeurs",
+    "width": 23,
+    "height": 25,
+    "totalWalkable": 351,
+    "reachable": 351,
+    "unreachableOpen": 0,
+    "degreeCounts": [
+      0,
+      5,
+      146,
+      151,
+      49
+    ],
+    "exitDistance": 41,
+    "objects": [
+      {
+        "id": "dormeurs-objective-1",
+        "type": "memory",
+        "label": "La cour au jasmin",
+        "x": 6.5,
+        "y": 3.5,
+        "startDistance": 7,
+        "degree": 3
+      },
+      {
+        "id": "dormeurs-objective-2",
+        "type": "memory",
+        "label": "Le cerf-volant rouge",
+        "x": 13.5,
+        "y": 4.5,
+        "startDistance": 15,
+        "degree": 3
+      },
+      {
+        "id": "dormeurs-objective-3",
+        "type": "memory",
+        "label": "La voix de sa mère",
+        "x": 10.5,
+        "y": 13.5,
+        "startDistance": 21,
+        "degree": 2
+      },
+      {
+        "id": "dormeurs-objective-4",
+        "type": "memory",
+        "label": "La première lampe",
+        "x": 4.5,
+        "y": 17.5,
+        "startDistance": 19,
+        "degree": 2
+      },
+      {
+        "id": "cerf-volant",
+        "type": "archive",
+        "label": "Le cerf-volant rouge",
+        "x": 16.5,
+        "y": 3.5,
+        "startDistance": 17,
+        "degree": 4
+      },
+      {
+        "id": "chambre-retournee",
+        "type": "archive",
+        "label": "La chambre retournée",
+        "x": 13.5,
+        "y": 1.5,
+        "startDistance": 16,
+        "degree": 3
+      },
+      {
+        "id": "berceuse",
+        "type": "archive",
+        "label": "La berceuse sans bouche",
+        "x": 15.5,
+        "y": 15.5,
+        "startDistance": 28,
+        "degree": 2
+      },
+      {
+        "id": "dormeurs-oil-7",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 3.5,
+        "y": 23.5,
+        "startDistance": 24,
+        "degree": 2,
+        "text": "Un souvenir reconnu ne peut plus mentir."
+      },
+      {
+        "id": "dormeurs-flash-8",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 1.5,
+        "y": 22.5,
+        "startDistance": 21,
+        "degree": 3,
+        "text": "Ne répondez jamais à la voix sans souffle."
+      },
+      {
+        "id": "dormeurs-bell-9",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 11.5,
+        "y": 6.5,
+        "startDistance": 15,
+        "degree": 2,
+        "text": "Un souvenir reconnu ne peut plus mentir."
+      },
+      {
+        "id": "dormeurs-inscription-10",
+        "type": "inscription",
+        "label": "Inscription relevée",
+        "x": 11.5,
+        "y": 17.5,
+        "startDistance": 26,
+        "degree": 4,
+        "text": "Ne répondez jamais à la voix sans souffle."
+      },
+      {
+        "id": "dormeurs-door-11",
+        "type": "door",
+        "label": "Seuil de repos",
+        "x": 2.5,
+        "y": 7.5,
+        "startDistance": 7,
+        "degree": 2,
+        "text": "Un souvenir reconnu ne peut plus mentir."
+      },
+      {
+        "id": "dormeurs-oil-12",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 17.5,
+        "y": 12.5,
+        "startDistance": 27,
+        "degree": 2,
+        "text": "Ne répondez jamais à la voix sans souffle."
+      },
+      {
+        "id": "dormeurs-flash-13",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 6.5,
+        "y": 13.5,
+        "startDistance": 17,
+        "degree": 2,
+        "text": "Un souvenir reconnu ne peut plus mentir."
+      },
+      {
+        "id": "dormeurs-bell-14",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 3.5,
+        "y": 13.5,
+        "startDistance": 14,
+        "degree": 3,
+        "text": "Ne répondez jamais à la voix sans souffle."
+      }
+    ],
+    "enemies": [
+      {
+        "id": "dormeurs-ushabti-0",
+        "type": "ushabti",
+        "x": 21.5,
+        "y": 15.5,
+        "startDistance": 34,
+        "distanceToNearestObjective": 13
+      },
+      {
+        "id": "dormeurs-scribe-1",
+        "type": "scribe",
+        "x": 1.5,
+        "y": 15.5,
+        "startDistance": 14,
+        "distanceToNearestObjective": 5
+      },
+      {
+        "id": "dormeurs-veiled-2",
+        "type": "veiled",
+        "x": 20.5,
+        "y": 13.5,
+        "startDistance": 31,
+        "distanceToNearestObjective": 10
+      }
+    ],
+    "sequence": [
+      "La cour au jasmin",
+      "Le cerf-volant rouge",
+      "La voix de sa mère",
+      "La première lampe"
+    ],
+    "sequentialRoute": null
+  },
+  {
+    "chapter": "palais",
+    "title": "V. Le Palais sous le soleil",
+    "width": 25,
+    "height": 23,
+    "totalWalkable": 344,
+    "reachable": 344,
+    "unreachableOpen": 0,
+    "degreeCounts": [
+      0,
+      7,
+      156,
+      143,
+      38
+    ],
+    "exitDistance": 41,
+    "objects": [
+      {
+        "id": "palais-objective-1",
+        "type": "pylon",
+        "label": "Pylône I",
+        "x": 23.5,
+        "y": 3.5,
+        "startDistance": 24,
+        "degree": 3
+      },
+      {
+        "id": "palais-objective-2",
+        "type": "pylon",
+        "label": "Pylône II",
+        "x": 11.5,
+        "y": 21.5,
+        "startDistance": 30,
+        "degree": 3
+      },
+      {
+        "id": "palais-objective-3",
+        "type": "pylon",
+        "label": "Pylône III",
+        "x": 9.5,
+        "y": 16.5,
+        "startDistance": 23,
+        "degree": 4
+      },
+      {
+        "id": "palais-objective-4",
+        "type": "pylon",
+        "label": "Pylône IV",
+        "x": 8.5,
+        "y": 15.5,
+        "startDistance": 21,
+        "degree": 3
+      },
+      {
+        "id": "palais-objective-5",
+        "type": "pylon",
+        "label": "Pylône V",
+        "x": 20.5,
+        "y": 4.5,
+        "startDistance": 22,
+        "degree": 2
+      },
+      {
+        "id": "cinq-pas",
+        "type": "archive",
+        "label": "Les cinq pas",
+        "x": 23.5,
+        "y": 10.5,
+        "startDistance": 31,
+        "degree": 2
+      },
+      {
+        "id": "masque",
+        "type": "archive",
+        "label": "Le masque fendu",
+        "x": 13.5,
+        "y": 19.5,
+        "startDistance": 30,
+        "degree": 4
+      },
+      {
+        "id": "pylones",
+        "type": "archive",
+        "label": "Les pylônes d’aube",
+        "x": 3.5,
+        "y": 21.5,
+        "startDistance": 22,
+        "degree": 3
+      },
+      {
+        "id": "palais-oil-8",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 2.5,
+        "y": 10.5,
+        "startDistance": 10,
+        "degree": 4,
+        "text": "Le soleil souterrain ne se lève pas en ligne droite."
+      },
+      {
+        "id": "palais-flash-9",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 5.5,
+        "y": 19.5,
+        "startDistance": 22,
+        "degree": 4,
+        "text": "Chaque faute offre une minute à la nuit."
+      },
+      {
+        "id": "palais-bell-10",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 13.5,
+        "y": 11.5,
+        "startDistance": 22,
+        "degree": 2,
+        "text": "Le soleil souterrain ne se lève pas en ligne droite."
+      },
+      {
+        "id": "palais-inscription-11",
+        "type": "inscription",
+        "label": "Inscription relevée",
+        "x": 14.5,
+        "y": 7.5,
+        "startDistance": 19,
+        "degree": 2,
+        "text": "Chaque faute offre une minute à la nuit."
+      },
+      {
+        "id": "palais-door-12",
+        "type": "door",
+        "label": "Seuil de repos",
+        "x": 2.5,
+        "y": 17.5,
+        "startDistance": 17,
+        "degree": 1,
+        "text": "Le soleil souterrain ne se lève pas en ligne droite."
+      },
+      {
+        "id": "palais-oil-13",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 9.5,
+        "y": 17.5,
+        "startDistance": 24,
+        "degree": 3,
+        "text": "Chaque faute offre une minute à la nuit."
+      },
+      {
+        "id": "palais-flash-14",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 3.5,
+        "y": 7.5,
+        "startDistance": 8,
+        "degree": 2,
+        "text": "Le soleil souterrain ne se lève pas en ligne droite."
+      }
+    ],
+    "enemies": [
+      {
+        "id": "palais-jackal-0",
+        "type": "jackal",
+        "x": 16.5,
+        "y": 21.5,
+        "startDistance": 35,
+        "distanceToNearestObjective": 5
+      },
+      {
+        "id": "palais-scribe-1",
+        "type": "scribe",
+        "x": 5.5,
+        "y": 5.5,
+        "startDistance": 8,
+        "distanceToNearestObjective": 13
+      },
+      {
+        "id": "palais-veiled-2",
+        "type": "veiled",
+        "x": 10.5,
+        "y": 15.5,
+        "startDistance": 23,
+        "distanceToNearestObjective": 2
+      },
+      {
+        "id": "palais-scarabs-3",
+        "type": "scarabs",
+        "x": 23.5,
+        "y": 9.5,
+        "startDistance": 30,
+        "distanceToNearestObjective": 6
+      }
+    ],
+    "sequence": [
+      "Pylône I",
+      "Pylône III",
+      "Pylône V",
+      "Pylône II",
+      "Pylône IV"
+    ],
+    "sequentialRoute": [
+      24,
+      27,
+      25,
+      28,
+      9,
+      20
+    ],
+    "sequentialWalk": 133
+  },
+  {
+    "chapter": "trone",
+    "title": "VI. Le Trône de l’aube absente",
+    "width": 27,
+    "height": 25,
+    "totalWalkable": 422,
+    "reachable": 422,
+    "unreachableOpen": 0,
+    "degreeCounts": [
+      0,
+      7,
+      162,
+      185,
+      68
+    ],
+    "exitDistance": 45,
+    "objects": [
+      {
+        "id": "trone-objective-1",
+        "type": "finalMirror",
+        "label": "Contre-jour d’est",
+        "x": 11.5,
+        "y": 18.5,
+        "startDistance": 27,
+        "degree": 2
+      },
+      {
+        "id": "trone-objective-2",
+        "type": "finalMirror",
+        "label": "Contre-jour d’ouest",
+        "x": 20.5,
+        "y": 17.5,
+        "startDistance": 35,
+        "degree": 3
+      },
+      {
+        "id": "trone-objective-3",
+        "type": "finalMirror",
+        "label": "Contre-jour du ciel",
+        "x": 8.5,
+        "y": 5.5,
+        "startDistance": 11,
+        "degree": 3
+      },
+      {
+        "id": "trone-objective-4",
+        "type": "finalMirror",
+        "label": "Contre-jour du nom",
+        "x": 19.5,
+        "y": 11.5,
+        "startDistance": 28,
+        "degree": 2
+      },
+      {
+        "id": "decret",
+        "type": "archive",
+        "label": "Le décret sans aube",
+        "x": 1.5,
+        "y": 23.5,
+        "startDistance": 22,
+        "degree": 2
+      },
+      {
+        "id": "derniere-page",
+        "type": "archive",
+        "label": "Dernière page",
+        "x": 12.5,
+        "y": 19.5,
+        "startDistance": 29,
+        "degree": 2
+      },
+      {
+        "id": "contre-jour",
+        "type": "archive",
+        "label": "Le contre-jour",
+        "x": 17.5,
+        "y": 9.5,
+        "startDistance": 24,
+        "degree": 4
+      },
+      {
+        "id": "trone-oil-7",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 6.5,
+        "y": 11.5,
+        "startDistance": 15,
+        "degree": 2,
+        "text": "Le roi sans nom ne possède aucune ombre."
+      },
+      {
+        "id": "trone-flash-8",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 6.5,
+        "y": 9.5,
+        "startDistance": 13,
+        "degree": 3,
+        "text": "La lumière la plus vive sait aussi mentir."
+      },
+      {
+        "id": "trone-bell-9",
+        "type": "bell",
+        "label": "Cloche solaire",
+        "x": 5.5,
+        "y": 17.5,
+        "startDistance": 20,
+        "degree": 4,
+        "text": "Le roi sans nom ne possède aucune ombre."
+      },
+      {
+        "id": "trone-inscription-10",
+        "type": "inscription",
+        "label": "Inscription relevée",
+        "x": 11.5,
+        "y": 17.5,
+        "startDistance": 26,
+        "degree": 4,
+        "text": "La lumière la plus vive sait aussi mentir."
+      },
+      {
+        "id": "trone-door-11",
+        "type": "door",
+        "label": "Seuil de repos",
+        "x": 4.5,
+        "y": 6.5,
+        "startDistance": 8,
+        "degree": 3,
+        "text": "Le roi sans nom ne possède aucune ombre."
+      },
+      {
+        "id": "trone-oil-12",
+        "type": "oil",
+        "label": "Bidon d’huile minérale",
+        "x": 14.5,
+        "y": 23.5,
+        "startDistance": 35,
+        "degree": 2,
+        "text": "La lumière la plus vive sait aussi mentir."
+      },
+      {
+        "id": "trone-flash-13",
+        "type": "flash",
+        "label": "Plaque de magnésium",
+        "x": 19.5,
+        "y": 1.5,
+        "startDistance": 22,
+        "degree": 2,
+        "text": "Le roi sans nom ne possède aucune ombre."
+      }
+    ],
+    "enemies": [
+      {
+        "id": "trone-ushabti-0",
+        "type": "ushabti",
+        "x": 9.5,
+        "y": 1.5,
+        "startDistance": 8,
+        "distanceToNearestObjective": 9
+      },
+      {
+        "id": "trone-jackal-1",
+        "type": "jackal",
+        "x": 16.5,
+        "y": 16.5,
+        "startDistance": 30,
+        "distanceToNearestObjective": 5
+      },
+      {
+        "id": "trone-scribe-2",
+        "type": "scribe",
+        "x": 16.5,
+        "y": 9.5,
+        "startDistance": 23,
+        "distanceToNearestObjective": 5
+      },
+      {
+        "id": "trone-veiled-3",
+        "type": "veiled",
+        "x": 4.5,
+        "y": 20.5,
+        "startDistance": 22,
+        "distanceToNearestObjective": 9
+      },
+      {
+        "id": "trone-pharaoh-4",
+        "type": "pharaoh",
+        "x": 7.5,
+        "y": 17.5,
+        "startDistance": 22,
+        "distanceToNearestObjective": 5
+      }
+    ],
+    "sequence": [
+      "Contre-jour d’est",
+      "Contre-jour d’ouest",
+      "Contre-jour du ciel",
+      "Contre-jour du nom"
+    ],
+    "sequentialRoute": null
+  }
+]

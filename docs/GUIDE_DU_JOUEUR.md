@@ -1,5 +1,11 @@
 # Guide du joueur
 
+## Menu et reprise
+
+**Continuer** charge l’expédition décrite sur l’écran titre. **Campagne** propose une nouvelle expédition ou les chapitres débloqués. Rejouer un chapitre remplace la campagne active après confirmation ; une nouvelle expédition indique aussi ce remplacement avant de descendre dans le temple. La collection d’archives, succès et fins reste conservée.
+
+Le menu **Pause** donne accès au journal, aux options, à la collection et aux sauvegardes. Les options sont regroupées en Image, Son, Accessibilité et Jeu et commandes. Fermer un panneau ouvert depuis Pause revient à Pause. **Sauvegarder et quitter** revient à l’écran titre.
+
 ## Le principe vital
 
 Aziz contrôle le projecteur principal depuis la surface. Sa lumière suit votre regard, mais sa vigilance baisse en continu. `C` ou le clic droit transmet le code « Soleil — Silence — Soleil » et alterne entre trois ordres :
@@ -20,7 +26,7 @@ Chaque chapitre possède trois archives. Le passage de sortie se trouve à l’e
 
 ## Progression et sauvegarde
 
-Un point de contrôle est créé au début de chaque chapitre et auprès des seuils sécurisés. La campagne est sauvegardée automatiquement. Confiance, corruption, vigilance, ressources, ennemis, orientations et séquences sont restaurés. Le menu permet de copier ou télécharger le dossier JSON, puis de l’importer sur un autre navigateur ; un profil sans partie active est valide et n’efface pas une campagne déjà présente sur l’appareil.
+Un point de contrôle est créé au début de chaque chapitre et auprès des seuils sécurisés. La campagne est sauvegardée automatiquement. Confiance, corruption, vigilance, ressources, ennemis, orientations et séquences sont restaurés. Le menu Sauvegardes permet de copier ou télécharger le dossier JSON, puis de l’importer sur un autre navigateur. Le remplacement d’une campagne existante demande confirmation. Une importation valide revient au menu pour reprendre la campagne choisie ; un profil sans partie active reste valide et n’efface pas la campagne locale.
 
 Si le navigateur refuse le stockage persistant, le jeu bascule sans planter vers une sauvegarde mémoire pour la session et affiche un avertissement. Exportez alors immédiatement le dossier JSON.
 
@@ -28,11 +34,13 @@ Si le navigateur refuse le stockage persistant, le jeu bascule sans planter vers
 
 1. Charger deux sceaux en restant dans le faisceau Focalisé.
 2. Révéler d’abord l’orientation de chaque miroir en Balayage, puis la reproduire en mode Focalisé. Une rotation aveugle invalide « Angle parfait ».
-3. Sceller les pierres dans le rythme Soleil — Silence — Soleil.
+3. Sceller les pierres dans l’ordre **Soleil — Souffle — Silence**. Le code « Soleil — Silence — Soleil » sert à communiquer avec Aziz ; ce n’est pas la séquence des pierres.
 4. Révéler chaque souvenir en Balayage puis appeler Aziz avant sa déformation.
 5. Activer les pylônes dans l’ordre I, III, V, II, IV.
 6. Converger les contre-jours puis maintenir le Pharaon dans la lumière.
 
 ## Accessibilité et mobile
 
-Les options couvrent sous-titres, repères directionnels textuels, texte agrandi, contraste renforcé jusque dans le rendu Canvas, réduction des mouvements, FOV, sensibilité, qualité et volume. Le tactile dispose de déplacement, regard, interaction, appel, signal, flash, lampe et pause. Le jeu reste zoomable au niveau du navigateur et adapte sa résolution sans déformer le Canvas, y compris à 320 px de large. La manette pilote aussi les menus et panneaux.
+Les options couvrent sous-titres, repères directionnels textuels, texte agrandi, contraste renforcé jusque dans le rendu Canvas, réduction des mouvements, FOV, sensibilité, qualité et volume. Couper les sous-titres ne masque pas les indices, inscriptions ou résultats d’action. Le tactile dispose de déplacement, regard, interaction, appel, signal, flash, lampe et pause. Le jeu reste zoomable au niveau du navigateur et adapte sa résolution sans déformer le Canvas. La recette sur téléphone réel et à 320 px reste à compléter pour le lot d’audit du 4 novembre 2026.
+
+Dans les menus, haut / bas déplace le focus. À la manette, gauche / droite règle un curseur ou une liste sélectionnée ; A / Croix valide et B / Rond revient. Au clavier, Tab parcourt les contrôles et Échap revient en arrière. Les réglages d’accessibilité restent accessibles pendant la pause.

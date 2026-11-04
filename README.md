@@ -24,6 +24,8 @@ Production : [aziz-la-lumiere-dort.vercel.app](https://aziz-la-lumiere-dort.verc
 - Énigmes dédiées par chapitre : canalisation, alignement, séquences, reconnaissance de souvenirs et ordre rituel.
 - Directeur de tension avec pics, respiration, bruits spatialisés et audio procédural dynamique.
 - Sauvegarde automatique, points de contrôle, sélection des chapitres et import/export JSON validé.
+- Menu Campagne, résumé de reprise, collection des fins et options accessibles depuis la pause.
+- Confirmation avant remplacement d’une campagne par un chapitre ou un dossier importé.
 - AZERTY, QWERTY, souris, manette et tactile.
 - Sous-titres, texte agrandi, contraste renforcé, réduction des mouvements, FOV, sensibilité et volume.
 - Audio et voix facultatives produits à l’exécution par les API du navigateur.
@@ -43,6 +45,7 @@ Production : [aziz-la-lumiere-dort.vercel.app](https://aziz-la-lumiere-dort.verc
 | Pause / journal | Échap, Tab ou J | Menu | II |
 
 Dans les menus et panneaux, la croix directionnelle ou le stick déplace le focus, A/Croix valide et B/Rond revient en arrière.
+Sur un curseur ou une liste d’options, gauche/droite ajuste la valeur. Les réglages sont regroupés en Image, Son, Accessibilité et Jeu et commandes.
 
 ## Vérifier
 
@@ -51,7 +54,15 @@ npm test
 npm run build
 ```
 
-La suite `npm test` contrôle syntaxe, contrat de contenu, accessibilité de chaque entité par parcours de carte, lumière, tension, fins, succès, manifeste PWA et chemins HTTP privés. `npm run build` produit et vérifie séparément l’artefact `dist/`. La recette navigateur de publication couvre le parcours desktop, le tactile dès 320 px, pause/journal/checkpoint, stockage refusé, import non destructif et rechargement hors ligne.
+La suite `npm test` contrôle syntaxe, contrat de contenu, accessibilité de chaque entité par parcours de carte, lumière, tension, fins, succès, manifeste PWA et chemins HTTP privés. Elle exécute aussi des méthodes réelles du moteur dans des environnements Node/VM avec Canvas ou DOM simulés pour les régressions ciblées. Ces simulations ne remplacent pas un navigateur.
+
+`npm run build` produit `dist/`, vérifie les références locales, les icônes du manifeste, le titre/version et l’absence de fichiers privés au premier niveau. Le test de build compare aussi les principaux fichiers de l’artefact avec les sources. Le workflow **Vérifier AZIZ** relance tests et build sur les PR.
+
+La recette navigateur de publication reste à exécuter : parcours desktop, tactile dès 320 px, manette physique, pause/journal/checkpoint, stockage refusé, import non destructif, campagne complète et rechargement hors ligne. Son statut exact figure dans l’audit ; aucune recette visuelle n’est déduite des tests Node.
+
+## Audit du 4 novembre 2026
+
+L’audit part du commit `66c8efe0f309c1aeaf64673141467aea2e1d774c` et conserve le contrat v1.2.0. Le [rapport et les preuves](docs/audit/README.md) accompagnent le [classeur Excel](docs/audit/AZIZ_Audit_Complet_2026-11-04.xlsx) et son registre JSON. Les constats de code, simulations, propositions de conception et vérifications restantes y sont distingués.
 
 ## Note de provenance
 

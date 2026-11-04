@@ -23,6 +23,30 @@ test('les modes du projecteur forment un cycle sans ambiguïté',()=>{
   assert.equal(mechanics.objectiveRule('memory').mode,'sweep');
 });
 
+test('un mode de sauvegarde invalide revient au balayage avec un projecteur complet',()=>{
+  for (const mode of ['constructor','__proto__','toString','hasOwnProperty','inconnu','',null,undefined,0,{},['focus'],{toString:()=> 'focus'}]) {
+    assert.equal(mechanics.normalizeMode(mode),'sweep');
+    assert.equal(mechanics.nextProjectorMode(mode),'focus');
+    const state=mechanics.projectorState({mode,wake:80,trust:80,sync:80,corruption:0});
+    assert.equal(state.id,'sweep');
+    assert.equal(state.online,true);
+    for (const field of ['cone','range','power','wakeCost','link']) assert.ok(Number.isFinite(state[field]),field);
+  }
+  for (const mode of ['sweep','focus','shelter']) assert.equal(mechanics.normalizeMode(mode),mode);
+});
+
+test('les types objectifs inconnus ne lisent pas les propriétés héritées',()=>{
+  for (const kind of ['constructor','__proto__','toString',null,{},['seal']]) {
+    const rule=mechanics.objectiveRule(kind);
+    assert.equal(rule.mode,'sweep');
+    assert.equal(rule.type,'instant');
+    assert.equal(rule.minLink,0);
+    assert.equal(rule.duration,0);
+  }
+  assert.equal(mechanics.objectiveRule('seal').type,'channel');
+  assert.equal(mechanics.objectiveRule('seal').duration,2.4);
+});
+
 test('les quatre fins ont des scénarios de campagne reproductibles',()=>{
   assert.equal(mechanics.endingKey({trust:86,corruption:12},{correctResponses:4,puzzleErrors:2}),'true_dawn');
   assert.equal(mechanics.endingKey({trust:62,corruption:42},{correctResponses:1,puzzleErrors:9}),'guardian');

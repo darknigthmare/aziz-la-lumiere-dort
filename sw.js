@@ -1,4 +1,4 @@
-const CACHE='aziz-shell-v1.2.0-r4';
+const CACHE='aziz-shell-v1.2.0-r5';
 const FILES=['/','/index.html','/src/styles.css','/src/data.js','/src/mechanics.js','/src/game.js','/manifest.webmanifest','/assets/icon.svg','/assets/icon-180.png','/assets/icon-192.png','/assets/icon-512.png','/assets/aziz-giza-1926-keyart.webp'];
 
 self.addEventListener('install',event=>{
@@ -6,7 +6,7 @@ self.addEventListener('install',event=>{
 });
 
 self.addEventListener('activate',event=>{
-  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
+  event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('aziz-shell-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
 });
 
 async function navigationResponse(request){

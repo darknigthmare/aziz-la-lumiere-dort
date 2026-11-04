@@ -95,3 +95,38 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   .prologue-card>p{margin:.4rem 0;line-height:1.45}
   .briefing-grid{margin:.6rem 0}
 }
+
+/* Navigation de campagne et options accessibles pendant la partie. */
+.title-card{justify-content:safe center;overflow-y:auto;overscroll-behavior:contain}
+.campaign-summary{width:min(420px,100%);padding:.65rem .8rem;border-left:2px solid var(--gold);background:#080604c9;color:#d2bea0;font-size:.75rem;line-height:1.55}
+.campaign-actions{display:grid;gap:.8rem;max-width:520px;margin:1.3rem 0}
+.campaign-warning{padding:.85rem 1rem;border-left:3px solid #d49b55;background:#2c1c0d;color:#f5d4a3!important;font-size:.9rem}
+.confirm-card{width:min(580px,94vw)}
+.confirm-card h2{font-family:Georgia,serif;font-weight:400;color:var(--pale)}
+.confirm-card>p:not(.eyebrow){line-height:1.65;color:#d5c4a9}
+#confirm-overlay{z-index:20}
+.panel-card header [data-close]{font-size:.75rem;border:1px solid var(--line);padding:.65rem .8rem}
+.panel-card header .eyebrow{margin-bottom:.1rem}
+.options-tabs{display:flex;flex-wrap:wrap;gap:.45rem;margin:0 0 1rem;padding-bottom:1rem;border-bottom:1px solid var(--line)}
+.options-tabs button{font-size:.72rem;padding:.7rem .85rem}
+.options-tabs [aria-selected=true]{background:#65421e;border-color:#e4b461;color:#fff1cc}
+.option-row output{font-size:.78rem;color:#e0b875;font-variant-numeric:tabular-nums}
+.option-help{color:#b9aa95;line-height:1.6;font-size:.85rem}
+html.large-text{font-size:125%}
+body.large-text{font-size:inherit}
+@media (pointer:coarse),(max-width:740px){
+  .main-menu{grid-template-columns:1fr}
+  .campaign-summary{font-size:.66rem;padding:.5rem .65rem}
+  .main-menu button{min-height:40px}
+  .options-tabs{display:grid;grid-template-columns:1fr 1fr}
+  .dialog-actions{flex-wrap:wrap}
+  .dialog-actions button{flex:1 1 40%;min-height:44px}
+  html.large-text .meters label{grid-template-columns:40px 62px 24px;font-size:.62rem}
+  html.large-text .projector-readout{font-size:.62rem}
+  html.large-text .inventory{font-size:.62rem}
+}
+@media (max-height:620px){
+  .title-card{justify-content:flex-start}
+  .campaign-summary{padding:.4rem .6rem}
+  .main-menu button{min-height:36px}
+}
