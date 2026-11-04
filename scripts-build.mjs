@@ -1,5 +1,7 @@
 import { cp, mkdir, rm, readFile, stat, readdir } from 'node:fs/promises';
 import assert from 'node:assert/strict';
+import { prepareRelease } from './scripts-release.mjs';
+const release = await prepareRelease({ check: true });
 const files=['index.html','manifest.webmanifest','sw.js','src','assets'];
 await rm('dist',{recursive:true,force:true});
 await mkdir('dist',{recursive:true});
@@ -16,4 +18,4 @@ for(const path of required){
 assert.deepEqual((await readdir('dist')).sort(),[...files].sort(),'Le build contient un fichier non public.');
 assert.match(html,/AZIZ — LA LUMIÈRE DORT v1\.2\.0/);
 assert.equal(manifest.display,'standalone');
-console.log(`Build statique AZIZ v1.2.0 vérifié : ${required.length} ressources, aucun fichier privé, dist/ prêt.`);
+console.log(`Build statique AZIZ v1.2.0 vérifié : ${required.length} ressources, aucun fichier privé, dist/ prêt. Révision ${release.revision}.`);

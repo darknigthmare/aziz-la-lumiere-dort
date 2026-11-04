@@ -91,7 +91,7 @@ const columns = [
   ['status','Statut',24], ['evidenceKind','Origine du constat',23], ['scope','Zone ou système',30],
   ['title','Sujet',48], ['observation','Constat au commit audité',62], ['evidence','Preuve du constat',60],
   ['impact','Effet sur le jeu',48], ['action','Travail à réaliser',65], ['acceptance','Critères d’acceptation',65],
-  ['effort','Effort estimé',18], ['dependencies','Dépendances',28], ['implementation','Modifications dans cette PR',58],
+  ['effort','Effort estimé',18], ['dependencies','Dépendances',28], ['implementation','Modifications livrées',58],
   ['verification','Vérification effectuée',56], ['remainingValidation','Validation restante',56], ['sourceUrl','Source GitHub',66]
 ];
 const regStart=7;
@@ -99,7 +99,7 @@ const regEnd=regStart+records.length-1;
 const colLetter=(index)=>{let s=''; for(let n=index+1;n>0;n=Math.floor((n-1)/26)) s=String.fromCharCode(65+(n-1)%26)+s; return s;};
 styleSheet(register, `A1:T${regEnd}`);
 title(register, 'Registre des corrections, ajouts et améliorations', 'T');
-register.getRange('A4').values = [['Tri initial : priorité, domaine et ID. Le statut décrit la livraison de cette PR. Les propositions restent identifiées dans « Origine du constat ».']];
+register.getRange('A4').values = [['Tri initial : priorité, domaine et ID. Le statut suit les lots intégrés. Les propositions restent identifiées dans « Origine du constat ».']];
 register.getRange('A4').format.font = {name:font,size:10,color:palette.muted,italic:true};
 register.getRange('A6:T6').values=[columns.map((x)=>x[1])];
 const rowValues=records.map((record)=>columns.map(([key])=>key==='category'?(record.category ?? record.domain):(record[key] ?? '')));
@@ -158,7 +158,7 @@ const summaryEnd=Math.max(46,domainStart+domains.length+4,domainStart+15+limitat
 styleSheet(summary,`A1:L${summaryEnd}`);
 summary.tabColor=palette.navy;
 title(summary,data.title ?? 'AZIZ — La Lumière Dort','L');
-summary.getRange('A4').values=[['Audit des sources et suivi de la première PR']];
+summary.getRange('A4').values=[[data.subtitle ?? 'Audit des sources et suivi des intégrations']];
 summary.getRange('A4').format.font={name:font,size:10,color:palette.muted,italic:true};
 const swidth=[32,15,15,15,3,33,15,15,3,31,16,16];
 swidth.forEach((w,c)=>summary.getRange(`${colLetter(c)}1:${colLetter(c)}${summaryEnd}`).format.columnWidth=w);
@@ -173,6 +173,13 @@ summary.getRange('A8').values=[['Périmètre']];
 summary.getRange('B8').values=[[data.scopeSummary ?? 'Sources et contrôles automatisés. Voir les résultats des parcours QA pour la validation du jeu.']];
 summary.getRange('B7:L8').format.font={name:font,size:10,color:palette.muted};
 summary.getRange('B8').format.wrapText=false;
+if (data.integration?.releaseRevision) {
+  summary.getRange('A9').values=[['Révision du lot']];
+  summary.getRange('B9').values=[[data.integration.releaseRevision]];
+  summary.getRange('F9').values=[['Suivi cumulé']];
+  summary.getRange('G9').values=[['PR #1 + lot d’intégration']];
+  summary.getRange('B9:L9').format.font={name:font,size:10,color:palette.muted};
+}
 summary.getRange('A10:B10').values=[['Actions recensées',null]];
 summary.getRange('B10').formulas=[[`=COUNTA('Registre'!$A$${regStart}:$A$${regEnd})`]];
 summary.getRange('F10:G10').values=[['Corrigées et vérifiées',null]];

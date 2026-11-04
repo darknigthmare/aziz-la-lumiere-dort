@@ -119,6 +119,44 @@
     return 'eternal_sleep';
   }
 
+  // Recherche cardinale bornée : les centres de cases évitent les diagonales
+  // coupant les coins. Le moteur conserve la route entre deux perceptions.
+  function findGridRoute(grid, from, to, maxVisited = 768) {
+    const h = grid?.length || 0, w = grid?.[0]?.length || 0;
+    const result = { path: [], visited: 0 };
+    if (!w || !h || w * h > 4096 || ![from?.x, from?.y, to?.x, to?.y].every(Number.isFinite)) return result;
+    const sx = Math.floor(from.x), sy = Math.floor(from.y), tx = Math.floor(to.x), ty = Math.floor(to.y);
+    const walkable = (x, y) => x >= 0 && y >= 0 && x < w && y < h && grid[y]?.[x] === 0;
+    if (!walkable(sx, sy) || !walkable(tx, ty)) return result;
+    const limit = Math.trunc(clamp(finite(maxVisited, 768), 1, 768));
+    const origin = sy * w + sx, target = ty * w + tx;
+    const previous = new Int32Array(w * h).fill(-1), queue = new Int32Array(w * h);
+    previous[origin] = origin;
+    queue[0] = origin;
+    let head = 0, tail = 1, found = false;
+    while (head < tail && result.visited < limit) {
+      const current = queue[head++];
+      result.visited++;
+      if (current === target) { found = true; break; }
+      const x = current % w, y = Math.floor(current / w);
+      for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]]) {
+        const nx = x + dx, ny = y + dy, next = ny * w + nx;
+        if (!walkable(nx, ny) || previous[next] !== -1) continue;
+        previous[next] = current;
+        queue[tail++] = next;
+      }
+    }
+    if (!found) return result;
+    let current = target;
+    while (true) {
+      result.path.push({ x: current % w + .5, y: Math.floor(current / w) + .5 });
+      if (current === origin) break;
+      current = previous[current];
+    }
+    result.path.reverse();
+    return result;
+  }
+
   function angleDelta(from, to) {
     return Math.atan2(Math.sin(to - from), Math.cos(to - from));
   }
@@ -141,6 +179,7 @@
     canOperateObjective,
     tensionTarget,
     endingKey,
+    findGridRoute,
     angleDelta,
     formatDuration
   });

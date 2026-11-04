@@ -3,7 +3,8 @@
 
   const Data = window.AZIZ_DATA;
   const Mechanics = window.AZIZ_MECHANICS;
-  if (!Data || !Mechanics) throw new Error('Le moteur AZIZ est incomplet.');
+  const Visuals = window.AZIZ_VISUALS;
+  if (!Data || !Mechanics || !Visuals) throw new Error('Le moteur AZIZ est incomplet.');
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
@@ -12,8 +13,104 @@
   const STORAGE_KEY = 'aziz-v1.2.0-save';
   const PROFILE_KEY = 'aziz-v1.2.0-profile';
   const ORIENTATIONS = ['nord', 'est', 'sud', 'ouest'];
+  const ACTIONS = Object.freeze({
+    forward: { title: 'Avancer', keys: ['KeyW', 'KeyZ', 'ArrowUp'] },
+    backward: { title: 'Reculer', keys: ['KeyS', 'ArrowDown'] },
+    strafeLeft: { title: 'Pas à gauche', keys: ['KeyA', 'KeyQ'] },
+    strafeRight: { title: 'Pas à droite', keys: ['KeyD'] },
+    turnLeft: { title: 'Tourner à gauche', keys: ['ArrowLeft'] },
+    turnRight: { title: 'Tourner à droite', keys: ['ArrowRight'] },
+    run: { title: 'Courir', keys: ['ShiftLeft', 'ShiftRight'], touch: 'COURIR', pad: 'Clic stick gauche' },
+    interact: { title: 'Examiner / actionner', keys: ['KeyE', 'Enter'], codes: ['Mouse0', 'Pad:interact', 'Touch:interact'], touch: 'EXAMINER', pad: 'A / Croix', mouse: 'clic gauche' },
+    call: { title: 'Appeler Aziz', keys: ['KeyF'], codes: ['Pad:call', 'Touch:call'], touch: 'AZIZ', pad: 'X / Carré' },
+    signal: { title: 'Changer le projecteur', keys: ['KeyC'], codes: ['Mouse2', 'Pad:signal', 'Touch:signal'], touch: 'SIGNAL', pad: 'B / Rond', mouse: 'clic droit' },
+    flash: { title: 'Flash au magnésium', keys: ['Space'], codes: ['Pad:flash', 'Touch:flash'], touch: 'FLASH', pad: 'Y / Triangle' },
+    lamp: { title: 'Allumer / éteindre la lampe', keys: ['KeyL'], codes: ['Pad:lamp', 'Touch:lamp'], touch: 'LAMPE', pad: 'LB / L1' },
+    journal: { title: 'Ouvrir le carnet', keys: ['Tab', 'KeyJ'], codes: ['Pad:journal'], touch: 'Pause → Journal', pad: 'View / Pavé tactile' },
+    pause: { title: 'Pause', keys: ['Escape'], codes: ['Escape', 'Pad:pause', 'Touch:pause'], touch: 'Ⅱ', pad: 'Menu / Options' }
+  });
+  const DEFAULT_BINDINGS = Object.freeze(Object.fromEntries(Object.entries(ACTIONS).map(([key, action]) => [key, Object.freeze([...action.keys])])));
+  const validBinding = (code, action) => typeof code === 'string' &&
+    (/^(Key[A-Z]|Digit[0-9]|Numpad[0-9]|Arrow(Up|Down|Left|Right)|Space|Enter|Shift(Left|Right)|Backspace|Comma|Period|Slash|Semicolon|Quote|BracketLeft|BracketRight|Backslash|Minus|Equal)$/.test(code) || code === 'Escape' && action === 'pause' || code === 'Tab' && action === 'journal');
+  function normalizeBindings(candidate) {
+    const result = {};
+    const used = new Set();
+    for (const [action, defaults] of Object.entries(DEFAULT_BINDINGS)) {
+      const raw = candidate?.[action];
+      const keys = Array.isArray(raw) && raw.length > 0 && raw.length <= 3 && raw.every(code => validBinding(code, action)) ? [...new Set(raw)] : [...defaults];
+      if (keys.some(code => used.has(code))) return clone(DEFAULT_BINDINGS);
+      keys.forEach(code => used.add(code));
+      result[action] = keys;
+    }
+    return result;
+  }
+  const actionKeys = (profile, action) => profile?.options?.bindings?.[action] || DEFAULT_BINDINGS[action];
+  const actionCodes = (profile, action) => [...actionKeys(profile, action), ...(ACTIONS[action].codes || [])];
+  function keyLabel(code) {
+    const names = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Space: 'Espace', Enter: 'Entrée', Escape: 'Échap', Tab: 'Tab', ShiftLeft: 'Maj gauche', ShiftRight: 'Maj droite', Backspace: 'Retour arrière', Comma: ',', Period: '.', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']', Backslash: '\\', Minus: '-', Equal: '=' };
+    return names[code] || code.replace(/^Key|^Digit/, '').replace(/^Numpad/, 'Pavé ');
+  }
+  function actionLabel(profile, device, action) {
+    const definition = ACTIONS[action];
+    if (device === 'touch' && definition.touch) return definition.touch;
+    if (device === 'gamepad' && definition.pad) return definition.pad;
+    const keys = actionKeys(profile, action).map(keyLabel).join(' / ');
+    return device === 'mouse' && definition.mouse ? `${keys} / ${definition.mouse}` : keys;
+  }
+  function remapBinding(profile, action, code) {
+    if (!Object.hasOwn(ACTIONS, action) || !validBinding(code, action)) return 'Cette touche est réservée ou indisponible. Choisissez une touche simple.';
+    const bindings = normalizeBindings(profile.options.bindings);
+    const conflict = Object.entries(bindings).find(([other, keys]) => other !== action && keys.includes(code));
+    if (conflict) return `${keyLabel(code)} est déjà utilisée pour « ${ACTIONS[conflict[0]].title} ». Choisissez une autre touche.`;
+    profile.options.bindings = { ...bindings, [action]: [code] };
+    return '';
+  }
+  function controlsSummary(profile, device) {
+    const label = action => actionLabel(profile, device, action);
+    const move = device === 'touch' ? 'Joystick : marcher · glisser sur la vue : regarder' : device === 'gamepad' ? 'Stick gauche : marcher · stick droit : regarder' :
+      `${label('forward')} / ${label('backward')} : avancer / reculer · ${label('strafeLeft')} / ${label('strafeRight')} : pas de côté · ${label('turnLeft')} / ${label('turnRight')} : tourner · souris : regarder`;
+    return `${move} · ${label('run')} : courir · ${label('interact')} : examiner · ${label('call')} : appeler Aziz · ${label('signal')} : signal · ${label('flash')} : flash · ${label('lamp')} : lampe · ${label('journal')} : carnet · ${label('pause')} : pause.`;
+  }
+  function collectionEntries(profile, { category = 'archives', filter = 'all', chapter = 'all' } = {}) {
+    let entries;
+    if (category === 'achievements') entries = Data.ACHIEVEMENTS.map(item => {
+      const found = profile.achievements.includes(item.id);
+      const secret = item.id === 'aube' && !found;
+      return { id: item.id, found, title: secret ? 'Succès secret' : item.title,
+        text: `${found ? 'Obtenu' : 'À accomplir'} · ${secret ? 'Découvrez un dénouement rare.' : item.description}` };
+    });
+    else if (category === 'endings') entries = Object.entries(Data.ENDINGS).map(([id, ending]) => {
+      const found = profile.endings.includes(id);
+      return { id, found, title: found ? ending.title : 'Fin non découverte', text: found ? ending.text : 'Poursuivez votre relation avec Aziz pour découvrir un autre dénouement.' };
+    });
+    else entries = Data.ARCHIVES.filter(item => chapter === 'all' || item.chapter === Number(chapter)).map(item => {
+      const found = profile.archives.includes(item.id);
+      return { id: item.id, found, title: item.title, text: found ? item.text : 'Document non découvert.' };
+    });
+    return entries.filter(entry => filter === 'all' || (filter === 'found' ? entry.found : !entry.found));
+  }
+  function notebookEntries(profile) {
+    const discovered = new Set(profile.notebook || []);
+    return Data.CHAPTERS.map(chapter => ({
+      id: chapter.id, title: chapter.title,
+      entries: [
+        ...chapter.objects.filter(object => discovered.has(object.id)).map(object => ({
+          title: object.label,
+          text: object.type === 'inscription' ? object.text : chapter.mechanic === 'align' ?
+            `Orientation constatée : ${ORIENTATIONS[object.targetOrientation]}.` : 'Mécanisme actionné au cours d’une expédition.'
+        })),
+        ...Data.ARCHIVES.filter(archive => archive.chapter === chapter.index && profile.archives.includes(archive.id)).map(archive => ({ title: archive.title, text: archive.text }))
+      ]
+    })).filter(chapter => chapter.entries.length);
+  }
   const DEFAULT_OPTIONS = Object.freeze({
     volume: .68,
+    effectsVolume: 1,
+    ambienceVolume: .8,
+    voiceVolume: 1,
+    reduceDynamicRange: false,
+    brightness: 1,
+    reduceFlashes: false,
     sensitivity: .9,
     fov: 66,
     quality: 'auto',
@@ -22,7 +119,11 @@
     reduceMotion: false,
     largeText: false,
     highContrast: false,
-    directionCues: true
+    directionCues: true,
+    bindings: DEFAULT_BINDINGS,
+    touchScale: 1,
+    touchSide: 'right',
+    touchSprint: 'toggle'
   });
   const DEFAULT_PROFILE = Object.freeze({
     difficulty: 'expedition',
@@ -31,6 +132,8 @@
     achievements: [],
     endings: [],
     visited: [],
+    notebook: [],
+    notebookRecent: null,
     onboardingComplete: false,
     options: DEFAULT_OPTIONS
   });
@@ -44,6 +147,7 @@
     puzzleErrors: 0,
     correctResponses: 0,
     objectives: 0,
+    objectiveAttempts: 0,
     chaptersCompleted: 0,
     startedAt: 0
   });
@@ -52,6 +156,9 @@
   const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
   const bounded = (value, minimum, maximum, fallback = minimum) => clamp(finite(value, fallback), minimum, maximum);
   const uniqueAllowed = (values, allowed) => [...new Set((Array.isArray(values) ? values : []).filter(value => allowed.has(value)))];
+  const DIFFICULTY_ORDER = ['exploration', 'expedition', 'eclipse'];
+  const knownDifficulty = value => DIFFICULTY_ORDER.includes(value) ? value : null;
+  const emptyCampaignEvents = () => ({ objectives: [], responses: [], chapters: [] });
   const connectedGamepad = () => Array.from(navigator.getGamepads?.() || []).find(pad => pad && pad.connected !== false);
 
   class Storage {
@@ -109,6 +216,8 @@
       const achievementIds = new Set(Data.ACHIEVEMENTS.map(item => item.id));
       const endingIds = new Set(Object.keys(Data.ENDINGS));
       const chapterIds = new Set(Data.CHAPTERS.map(item => item.id));
+      const noteIds = new Set(Data.CHAPTERS.flatMap(chapter => chapter.objects.filter(object => object.type === 'inscription' || object.type === chapter.kind).map(object => object.id)));
+      const recent = raw.notebookRecent;
       const quality = ['auto', 'low', 'high'].includes(rawOptions.quality) ? rawOptions.quality : DEFAULT_OPTIONS.quality;
       return {
         difficulty,
@@ -117,9 +226,17 @@
         achievements: uniqueAllowed(raw.achievements, achievementIds),
         endings: uniqueAllowed(raw.endings, endingIds),
         visited: uniqueAllowed(raw.visited, chapterIds),
+        notebook: uniqueAllowed(raw.notebook, noteIds),
+        notebookRecent: recent && chapterIds.has(recent.chapterId) && typeof recent.text === 'string' ? { chapterId: recent.chapterId, text: recent.text.trim().slice(0, 1000) } : null,
         onboardingComplete: raw.onboardingComplete === true,
         options: {
           volume: bounded(rawOptions.volume, 0, 1, DEFAULT_OPTIONS.volume),
+          effectsVolume: bounded(rawOptions.effectsVolume, 0, 1, DEFAULT_OPTIONS.effectsVolume),
+          ambienceVolume: bounded(rawOptions.ambienceVolume, 0, 1, DEFAULT_OPTIONS.ambienceVolume),
+          voiceVolume: bounded(rawOptions.voiceVolume, 0, 1, DEFAULT_OPTIONS.voiceVolume),
+          reduceDynamicRange: rawOptions.reduceDynamicRange === true,
+          brightness: bounded(rawOptions.brightness, .7, 1.6, DEFAULT_OPTIONS.brightness),
+          reduceFlashes: rawOptions.reduceFlashes === true,
           sensitivity: bounded(rawOptions.sensitivity, .3, 2, DEFAULT_OPTIONS.sensitivity),
           fov: bounded(rawOptions.fov, 55, 85, DEFAULT_OPTIONS.fov),
           quality,
@@ -128,7 +245,11 @@
           reduceMotion: rawOptions.reduceMotion === true,
           largeText: rawOptions.largeText === true,
           highContrast: rawOptions.highContrast === true,
-          directionCues: rawOptions.directionCues !== false
+          directionCues: rawOptions.directionCues !== false,
+          bindings: normalizeBindings(rawOptions.bindings),
+          touchScale: bounded(rawOptions.touchScale, .85, 1.25, 1),
+          touchSide: rawOptions.touchSide === 'left' ? 'left' : 'right',
+          touchSprint: rawOptions.touchSprint === 'hold' ? 'hold' : 'toggle'
         }
       };
     }
@@ -177,6 +298,8 @@
           alive: deadEnemies.has(enemy.id) ? false : raw.alive !== false,
           alert: bounded(raw.alert, 0, 1, 0),
           memory: bounded(raw.memory, 0, 20, 0),
+          targetX: walkable(raw.targetX, raw.targetY) ? raw.targetX : null,
+          targetY: walkable(raw.targetX, raw.targetY) ? raw.targetY : null,
           state: ['dormant', 'investigate', 'chase', 'search', 'stunned'].includes(raw.state) ? raw.state : 'dormant'
         };
       });
@@ -185,6 +308,40 @@
       const rawChapterStats = candidate.chapterStats && typeof candidate.chapterStats === 'object' ? candidate.chapterStats : {};
       const stats = {};
       for (const key of Object.keys(DEFAULT_STATS)) stats[key] = Math.max(0, finite(rawStats[key], DEFAULT_STATS[key]));
+      // Les actions cumulées restent distinctes des événements validés une fois.
+      // Une ancienne sauvegarde ne permet de reconstruire que les étapes prouvées.
+      const reached = Data.CHAPTERS.slice(0, chapterIndex + 1);
+      const objectiveIds = new Set(reached.flatMap(chapter => chapter.objects.filter(object => object.type === chapter.kind).map(object => object.id)));
+      const responseIds = new Set(reached.flatMap(chapter => [
+        ...chapter.objects.filter(object => object.type === 'memory').map(object => `memory:${object.id}`),
+        ...chapter.enemies.filter(enemy => enemy.type === 'veiled').map(enemy => `veil:${enemy.id}`)
+      ]));
+      const rawEvents = candidate.campaignEvents;
+      const legacyCompleted = !rawEvents && stats.chaptersCompleted >= chapterIndex ? reached.slice(0, chapterIndex) : [];
+      const knownObjectives = [
+        ...legacyCompleted.flatMap(chapter => chapter.objects.filter(object => object.type === chapter.kind)),
+        ...level.objects.filter(object => object.type === level.kind && (completedIds.includes(object.id) || objectStates[object.id]?.done))
+      ];
+      const objectiveEvents = uniqueAllowed([...(Array.isArray(rawEvents?.objectives) ? rawEvents.objectives : []), ...knownObjectives.map(object => object.id)], objectiveIds);
+      const provenResponses = objectiveEvents.map(id => `memory:${id}`).filter(id => responseIds.has(id));
+      const campaignEvents = {
+        objectives: objectiveEvents,
+        responses: uniqueAllowed([...(Array.isArray(rawEvents?.responses) ? rawEvents.responses : []), ...provenResponses], responseIds),
+        chapters: uniqueAllowed(rawEvents ? rawEvents.chapters : legacyCompleted.map(chapter => chapter.id), new Set(reached.map(chapter => chapter.id)))
+      };
+      stats.objectiveAttempts = Math.max(stats.objectiveAttempts, stats.objectives, campaignEvents.objectives.length);
+      stats.objectives = campaignEvents.objectives.length;
+      stats.correctResponses = campaignEvents.responses.length;
+      stats.chaptersCompleted = campaignEvents.chapters.length;
+      const difficulty = knownDifficulty(candidate.difficulty);
+      const rawDifficulty = candidate.campaignDifficulty || {};
+      const started = knownDifficulty(rawDifficulty.started);
+      const played = [started, knownDifficulty(rawDifficulty.lowest), difficulty].filter(Boolean);
+      const campaignDifficulty = {
+        started,
+        lowest: played.length ? DIFFICULTY_ORDER[Math.min(...played.map(value => DIFFICULTY_ORDER.indexOf(value)))] : null,
+        fromStart: rawDifficulty.fromStart === true && !!started
+      };
       const chapterStats = {};
       for (const key of Object.keys(DEFAULT_CHAPTER_STATS)) chapterStats[key] = Math.max(0, finite(rawChapterStats[key], DEFAULT_CHAPTER_STATS[key]));
       return {
@@ -211,6 +368,10 @@
         objectStates,
         enemyStates,
         elapsed: Math.max(0, finite(candidate.elapsed, 0)),
+        campaignElapsed: Math.max(0, finite(candidate.campaignElapsed, finite(candidate.elapsed, 0))),
+        difficulty,
+        campaignDifficulty,
+        campaignEvents,
         stats,
         chapterStats,
         savedAt: typeof candidate.savedAt === 'string' ? candidate.savedAt : null
@@ -248,6 +409,7 @@
         schema: 'aziz-save',
         version: Data.VERSION,
         exportedAt: new Date().toISOString(),
+        buildRevision: window.AZIZ_RELEASE?.revision || 'local',
         save: this.getSave(),
         profile: this.getProfile()
       }, null, 2);
@@ -277,6 +439,13 @@
       this.profile = profile;
       this.ctx = null;
       this.master = null;
+      this.buses = null;
+      this.compressor = null;
+      this.suspended = true;
+      this.voiceToken = 0;
+      this.previewToken = 0;
+      this.previewActive = false;
+      this.voiceActive = false;
       this.drone = null;
       this.pulse = null;
       this.nextBeat = 0;
@@ -286,6 +455,7 @@
     ensure() {
       if (this.ctx) {
         if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+        this.applyMix();
         return true;
       }
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -293,14 +463,19 @@
       try {
         this.ctx = new AudioContextClass();
         this.master = this.ctx.createGain();
-        this.master.gain.value = this.profile.options.volume * .24;
-        this.master.connect(this.ctx.destination);
+        this.buses = { effects: this.ctx.createGain(), ambience: this.ctx.createGain() };
+        this.buses.effects.connect(this.master);
+        this.buses.ambience.connect(this.master);
+        this.compressor = this.ctx.createDynamicsCompressor?.();
+        if (this.compressor) this.master.connect(this.compressor).connect(this.ctx.destination);
+        else this.master.connect(this.ctx.destination);
+        this.applyMix();
         const oscillator = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
         oscillator.type = 'sawtooth';
         oscillator.frequency.value = 39;
         gain.gain.value = .026;
-        oscillator.connect(gain).connect(this.master);
+        oscillator.connect(gain).connect(this.buses.ambience);
         oscillator.start();
         this.drone = { oscillator, gain };
         return true;
@@ -310,7 +485,54 @@
       }
     }
 
-    tone(frequency = 180, duration = .16, type = 'sine', volume = .12, pan = 0) {
+    applyMix() {
+      const options = this.profile.options;
+      if (this.master) this.master.gain.value = options.volume * .24;
+      if (this.buses) {
+        this.buses.effects.gain.value = finite(options.effectsVolume, 1);
+        this.buses.ambience.gain.value = finite(options.ambienceVolume, .8);
+      }
+      if (this.compressor) {
+        this.compressor.threshold.value = options.reduceDynamicRange ? -24 : 0;
+        this.compressor.knee.value = options.reduceDynamicRange ? 18 : 0;
+        this.compressor.ratio.value = options.reduceDynamicRange ? 4 : 1;
+        this.compressor.attack.value = .01;
+        this.compressor.release.value = .2;
+      }
+      if (this.voiceActive && (!options.voices || options.volume <= 0 || options.voiceVolume <= 0)) this.cancelSpeech();
+    }
+
+    cancelSpeech() {
+      this.voiceToken++;
+      this.voiceActive = false;
+      window.speechSynthesis?.cancel();
+    }
+
+    localVoice() {
+      try {
+        return window.speechSynthesis?.getVoices?.().filter(voice => voice.localService === true && /^fr(?:-|_|$)/i.test(voice.lang))
+          .sort((a, b) => Number(b.lang === 'fr-FR') - Number(a.lang === 'fr-FR') || String(a.name).localeCompare(String(b.name)))[0] || null;
+      } catch { return null; }
+    }
+
+    preview(category) {
+      const restorePause = this.previewActive ? this.previewRestorePause : this.suspended;
+      this.previewRestorePause = restorePause;
+      this.previewActive = true;
+      const token = ++this.previewToken;
+      this.suspended = false;
+      if (!this.ensure()) { this.suspended = restorePause; this.previewActive = false; return false; }
+      if (category === 'voice') this.voice('Je tiens la lumière.');
+      else this.tone(category === 'ambience' ? 96 : 486, .4, 'sine', .12, 0, category);
+      setTimeout(() => {
+        if (this.previewToken !== token) return;
+        this.previewActive = false;
+        if (restorePause) this.suspend(true);
+      }, category === 'voice' ? 2600 : 650);
+      return true;
+    }
+
+    tone(frequency = 180, duration = .16, type = 'sine', volume = .12, pan = 0, category = 'effects') {
       if (!this.ensure()) return;
       const oscillator = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -324,13 +546,13 @@
       if (this.ctx.createStereoPanner) {
         const panner = this.ctx.createStereoPanner();
         panner.pan.value = clamp(pan, -1, 1);
-        gain.connect(panner).connect(this.master);
-      } else gain.connect(this.master);
+        gain.connect(panner).connect(this.buses[category] || this.buses.effects);
+      } else gain.connect(this.buses[category] || this.buses.effects);
       oscillator.start(now);
       oscillator.stop(now + duration);
     }
 
-    noise(duration = .2, volume = .1, pan = 0) {
+    noise(duration = .2, volume = .1, pan = 0, category = 'effects') {
       if (!this.ensure()) return;
       const size = Math.ceil(this.ctx.sampleRate * duration);
       const buffer = this.ctx.createBuffer(1, size, this.ctx.sampleRate);
@@ -344,8 +566,8 @@
       if (this.ctx.createStereoPanner) {
         const panner = this.ctx.createStereoPanner();
         panner.pan.value = clamp(pan, -1, 1);
-        gain.connect(panner).connect(this.master);
-      } else gain.connect(this.master);
+        gain.connect(panner).connect(this.buses[category] || this.buses.effects);
+      } else gain.connect(this.buses[category] || this.buses.effects);
       source.start();
     }
 
@@ -355,58 +577,97 @@
     }
 
     voice(text, altered = false) {
-      if (!this.profile.options.voices || !('speechSynthesis' in window)) return;
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'fr-FR';
+      const options = this.profile.options;
+      if (this.suspended || !options.voices || options.volume <= 0 || options.voiceVolume <= 0) {
+        if (this.voiceActive) this.cancelSpeech();
+        return false;
+      }
+      // A newer request supersedes an older utterance even if its local voice
+      // disappeared between calls and it must immediately fall back to text.
+      this.cancelSpeech();
+      const localVoice = this.localVoice();
+      if (!localVoice || typeof window.SpeechSynthesisUtterance !== 'function') {
+        this.onVoiceFallback?.(text);
+        return false;
+      }
+      const token = this.voiceToken;
+      const utterance = new window.SpeechSynthesisUtterance(text);
+      utterance.voice = localVoice;
+      utterance.lang = localVoice.lang;
       utterance.rate = altered ? .68 : .82;
       utterance.pitch = altered ? .42 : .75;
-      utterance.volume = this.profile.options.volume * .62;
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utterance);
+      utterance.volume = options.volume * finite(options.voiceVolume, 1) * .62;
+      let failed = false;
+      const fallback = () => {
+        if (!failed && token === this.voiceToken && !this.suspended) {
+          failed = true;
+          this.voiceActive = false;
+          this.onVoiceFallback?.(text);
+        }
+      };
+      utterance.onerror = event => { if (!['canceled', 'interrupted'].includes(event.error)) fallback(); };
+      utterance.onend = () => { if (token === this.voiceToken) this.voiceActive = false; };
+      try {
+        this.voiceActive = true;
+        window.speechSynthesis.speak(utterance);
+        return true;
+      } catch { fallback(); return false; }
     }
 
     update(time, tension, wake, corruption) {
       if (!this.ctx || !this.master) return;
-      this.master.gain.value = this.profile.options.volume * .24;
+      this.applyMix();
       this.drone.gain.gain.value = .018 + tension * .058 + (100 - wake) / 4300 + corruption / 6000;
       if (time > this.nextBeat && tension > .26) {
-        this.tone(48 + tension * 14, .095, 'sine', .045 + tension * .075);
+        this.tone(48 + tension * 14, .095, 'sine', .045 + tension * .075, 0, 'ambience');
         this.nextBeat = time + .96 - tension * .5;
       }
       if (time > this.nextCreak && tension > .44) {
-        this.tone(112 + Math.random() * 60, .42, 'sawtooth', .018, Math.random() * 1.6 - .8);
+        this.tone(112 + Math.random() * 60, .42, 'sawtooth', .018, 0, 'ambience');
         this.nextCreak = time + 5 + Math.random() * 7;
       }
     }
 
     suspend(suspended) {
-      if (suspended) window.speechSynthesis?.cancel();
+      this.suspended = suspended;
+      this.previewToken++;
+      this.previewActive = false;
+      if (suspended) this.cancelSpeech();
       if (!this.ctx) return;
       const action = suspended ? this.ctx.suspend() : this.ctx.resume();
       action?.catch?.(() => {});
     }
+
+    resetTimeline() {
+      this.nextBeat = 0;
+      this.nextCreak = 0;
+      this.cancelSpeech();
+    }
   }
 
   class Input {
-    constructor(canvas, getGame) {
+    constructor(canvas, getGame, getProfile = () => getGame()?.profile) {
       this.canvas = canvas;
       this.getGame = getGame;
+      this.getProfile = getProfile;
       this.keys = new Set();
       this.pressed = new Set();
       this.gamepadHeld = new Map();
       this.turn = 0;
       this.touchX = 0;
       this.touchY = 0;
+      this.touchSprintActive = false;
+      this.touchSprintPointers = new Set();
       this.lastDevice = 'keyboard';
       this.touchEnabled = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
       addEventListener('keydown', event => {
+        if (event.repeat) return;
+        this.setDevice('keyboard');
         if (this.getGame()?.mode !== 'playing' || event.target?.matches?.('input, select, textarea')) return;
-        if (event.repeat && ['Escape', 'Tab', 'KeyJ', 'KeyE', 'Enter', 'KeyF', 'KeyC', 'Space', 'KeyL'].includes(event.code)) return;
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
         if (!this.keys.has(event.code)) this.pressed.add(event.code);
         this.keys.add(event.code);
-        this.lastDevice = 'keyboard';
-        const activeGame = this.getGame()?.mode === 'playing';
-        if (activeGame && ['Space', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) event.preventDefault();
+        if (Object.keys(ACTIONS).some(action => actionCodes(this.getProfile(), action).includes(event.code))) event.preventDefault();
       });
       addEventListener('keyup', event => this.keys.delete(event.code));
       addEventListener('blur', () => {
@@ -414,11 +675,12 @@
         if (this.getGame()?.mode === 'playing') this.getGame().togglePause();
       });
       addEventListener('mousemove', event => {
-        if (document.pointerLockElement === this.canvas) {
+        if (document.pointerLockElement === this.canvas && event.movementX) {
           this.turn += event.movementX * .0025;
-          this.lastDevice = 'mouse';
+          this.setDevice('mouse');
         }
       });
+      addEventListener('pointerdown', event => this.setDevice(event.pointerType === 'touch' ? 'touch' : 'mouse'));
       this.canvas.addEventListener('pointerdown', event => {
         const game = this.getGame();
         if (game?.mode !== 'playing' || event.pointerType === 'touch') return;
@@ -429,7 +691,7 @@
           }
         }
         if (event.button === 2) this.pressed.add('Mouse2');
-        this.lastDevice = 'mouse';
+        this.setDevice('mouse');
       });
       this.bindTouch();
     }
@@ -439,24 +701,29 @@
       const knob = stick.querySelector('i');
       let active = null;
       let center = { x: 0, y: 0 };
+      let radius = 45;
       const move = event => {
         if (active === null) return;
-        const point = [...(event.changedTouches || [])].find(touch => touch.identifier === active) || event;
+        const point = [...(event.changedTouches || [])].find(touch => touch.identifier === active);
+        if (!point) return;
         let dx = point.clientX - center.x;
         let dy = point.clientY - center.y;
         const distance = Math.hypot(dx, dy) || 1;
-        const magnitude = Math.min(45, distance);
+        const magnitude = Math.min(radius, distance);
         dx = dx / distance * magnitude;
         dy = dy / distance * magnitude;
         knob.style.transform = `translate(${dx}px,${dy}px)`;
-        this.touchX = dx / 45;
-        this.touchY = dy / 45;
-        this.lastDevice = 'touch';
+        this.touchX = dx / radius;
+        this.touchY = dy / radius;
+        this.setDevice('touch');
       };
       const start = event => {
-        const point = event.changedTouches ? event.changedTouches[0] : event;
-        active = point.identifier ?? 1;
+        if (active !== null || this.getGame()?.mode !== 'playing') return;
+        const point = event.changedTouches[0];
+        if (!point) return;
+        active = point.identifier;
         const rect = stick.getBoundingClientRect();
+        radius = Math.max(20, rect.width * .32);
         center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         move(event);
         event.preventDefault();
@@ -475,14 +742,29 @@
       stick.addEventListener('touchcancel', end, { passive: false });
       $$('#touch-controls button').forEach(button => button.addEventListener('pointerdown', event => {
         if (this.getGame()?.mode !== 'playing') return;
-        this.pressed.add(`Touch:${button.dataset.action}`);
-        this.lastDevice = 'touch';
+        if (button.dataset.action === 'run') {
+          if (this.getProfile()?.options.touchSprint === 'hold') {
+            this.touchSprintPointers.add(event.pointerId);
+            this.touchSprintActive = true;
+            button.setPointerCapture?.(event.pointerId);
+          } else this.touchSprintActive = !this.touchSprintActive;
+          this.updateSprintButton();
+        } else this.pressed.add(`Touch:${button.dataset.action}`);
+        this.setDevice('touch');
         event.preventDefault();
       }));
+      const releaseSprint = event => {
+        if (!this.touchSprintPointers.delete(event.pointerId)) return;
+        this.touchSprintActive = this.touchSprintPointers.size > 0;
+        this.updateSprintButton();
+      };
+      addEventListener('pointerup', releaseSprint);
+      addEventListener('pointercancel', releaseSprint);
       let lookId = null;
       let lastX = 0;
       this.canvas.addEventListener('touchstart', event => {
-        const touch = [...event.changedTouches].find(item => item.clientX > innerWidth * .44);
+        if (lookId !== null || this.getGame()?.mode !== 'playing') return;
+        const touch = [...event.changedTouches][0];
         if (touch) {
           lookId = touch.identifier;
           lastX = touch.clientX;
@@ -493,7 +775,7 @@
         if (touch) {
           this.turn += (touch.clientX - lastX) * .009;
           lastX = touch.clientX;
-          this.lastDevice = 'touch';
+          this.setDevice('touch');
         }
       }, { passive: true });
       const clearLook = event => {
@@ -501,6 +783,28 @@
       };
       this.canvas.addEventListener('touchend', clearLook, { passive: true });
       this.canvas.addEventListener('touchcancel', clearLook, { passive: true });
+      this.resetTouch = () => { active = null; lookId = null; knob.style.transform = ''; };
+    }
+
+    setDevice(device) {
+      if (this.lastDevice === device) return;
+      this.lastDevice = device;
+      this.onDeviceChange?.();
+    }
+
+    observeGamepad(pad) {
+      if (!pad) { this.gamepadObservation = null; return; }
+      const previous = this.gamepadObservation;
+      const active = pad.buttons.some((button, index) => button.pressed && !previous?.buttons[index]) ||
+        pad.axes.some((axis, index) => Math.abs(axis) > .18 && Math.abs(axis - (previous?.axes[index] || 0)) > .04);
+      this.gamepadObservation = { buttons: pad.buttons.map(button => button.pressed), axes: [...pad.axes] };
+      if (active) this.setDevice('gamepad');
+    }
+
+    updateSprintButton() {
+      const button = $('#touch-controls [data-action="run"]');
+      button?.setAttribute?.('aria-pressed', String(this.touchSprintActive));
+      if (button) button.textContent = this.touchSprintActive ? 'COURSE ✓' : 'COURIR';
     }
 
     down(...codes) {
@@ -513,11 +817,15 @@
       this.turn = 0;
       this.touchX = 0;
       this.touchY = 0;
+      this.touchSprintActive = false;
+      this.touchSprintPointers?.clear();
+      this.resetTouch?.();
+      this.updateSprintButton();
       const knob = $('#touch-stick i');
       if (knob) knob.style.transform = '';
       const pad = connectedGamepad();
       this.gamepadHeld.clear();
-      for (const index of [0, 1, 2, 3, 4, 9]) this.gamepadHeld.set(index, pad?.buttons[index]?.pressed === true);
+      for (const index of [0, 1, 2, 3, 4, 8, 9]) this.gamepadHeld.set(index, pad?.buttons[index]?.pressed === true);
     }
 
     take(...codes) {
@@ -528,17 +836,17 @@
 
     pollGamepad() {
       const gamepad = connectedGamepad();
+      this.observeGamepad(gamepad);
       if (!gamepad) {
         this.gamepadHeld.clear();
         return { moveX: 0, moveY: 0, turn: 0, run: false };
       }
-      const mapping = new Map([[0, 'Pad:interact'], [1, 'Pad:signal'], [2, 'Pad:call'], [3, 'Pad:flash'], [4, 'Pad:lamp'], [9, 'Pad:pause']]);
+      const mapping = new Map([[0, 'Pad:interact'], [1, 'Pad:signal'], [2, 'Pad:call'], [3, 'Pad:flash'], [4, 'Pad:lamp'], [8, 'Pad:journal'], [9, 'Pad:pause']]);
       for (const [index, code] of mapping) {
         const held = gamepad.buttons[index]?.pressed === true;
         if (held && !this.gamepadHeld.get(index) && this.getGame()?.mode === 'playing') this.pressed.add(code);
         this.gamepadHeld.set(index, held);
       }
-      if (gamepad.buttons.some(button => button.pressed) || gamepad.axes.some(axis => Math.abs(axis) > .18)) this.lastDevice = 'gamepad';
       return {
         moveX: Math.abs(gamepad.axes[0] || 0) > .18 ? gamepad.axes[0] : 0,
         moveY: Math.abs(gamepad.axes[1] || 0) > .18 ? gamepad.axes[1] : 0,
@@ -565,6 +873,7 @@
       this.last = performance.now();
       this.elapsed = 0;
       this.toastTimer = 0;
+      this.voiceFallbackTimer = 0;
       this.saveClock = 0;
       this.stats = clone(DEFAULT_STATS);
       this.chapterStats = clone(DEFAULT_CHAPTER_STATS);
@@ -596,6 +905,10 @@
       this.level = clone(Data.CHAPTERS[index]);
       this.chapterIndex = index;
       this.mode = 'playing';
+      if (state?.difficulty) this.profile.difficulty = state.difficulty;
+      this.campaignDifficulty = state?.campaignDifficulty || { started: this.profile.difficulty, lowest: this.profile.difficulty, fromStart: index === 0 && !candidate };
+      this.campaignEvents = state?.campaignEvents || emptyCampaignEvents();
+      this.trackDifficulty();
       const basePlayer = { x: this.level.start.x, y: this.level.start.y, a: this.level.start.a, health: 100, battery: 100, flashes: 3, lampOn: true, calm: 100 };
       this.player = { ...basePlayer, ...(state?.player || {}) };
       this.aziz = { wake: 100, trust: 50, corruption: 0, sync: 35, mode: 'sweep', ...(state?.aziz || {}) };
@@ -608,6 +921,7 @@
         const saved = objectStates[object.id];
         if (saved) Object.assign(object, saved);
         object.done = object.done === true || this.completedIds.has(object.id);
+        if (object.done || object.revealed) this.recordDiscovery(object, false);
       }
       const enemyStates = new Map((state?.enemyStates || []).map(enemy => [enemy.id, enemy]));
       for (const enemy of this.level.enemies) {
@@ -618,11 +932,18 @@
       this.objectiveCount = this.level.objects.filter(object => object.type === this.level.kind && object.done).length;
       this.objectiveComplete = this.objectiveCount >= this.level.target;
       this.elapsed = state?.elapsed || 0;
+      this.campaignElapsed = state?.campaignElapsed || 0;
       this.director = { pressure: .08 + index * .025, grace: 10, surge: 0, nextEvent: this.elapsed + 18 };
       this.ritual = null;
       this.challenge = null;
       this.noiseEvent = null;
       this.callCooldown = 0;
+      this.nextThreatCue = 0;
+      this.threatCueRemaining = 0;
+      this.audio.resetTimeline?.();
+      this.voiceFallbackTimer = 0;
+      $('#voice-fallback').classList.remove('visible');
+      $('#voice-fallback').textContent = '';
       this.signalCooldown = 0;
       this.lastSignal = -99;
       this.saveClock = 0;
@@ -639,6 +960,7 @@
     }
 
     snapshot() {
+      this.trackDifficulty();
       const objectStates = {};
       for (const object of this.level.objects) {
         objectStates[object.id] = {
@@ -665,15 +987,22 @@
           alive: enemy.alive,
           alert: enemy.alert || 0,
           memory: enemy.memory || 0,
+          targetX: Number.isFinite(enemy.targetX) ? enemy.targetX : null,
+          targetY: Number.isFinite(enemy.targetY) ? enemy.targetY : null,
           state: enemy.state || 'dormant'
         })),
         elapsed: this.elapsed,
+        campaignElapsed: finite(this.campaignElapsed, this.elapsed),
+        difficulty: this.profile.difficulty,
+        campaignDifficulty: clone(this.campaignDifficulty),
+        campaignEvents: clone(this.campaignEvents || emptyCampaignEvents()),
         stats: { ...this.stats },
         chapterStats: { ...this.chapterStats }
       };
     }
 
     transitionState(nextIndex) {
+      this.trackDifficulty();
       const next = Data.CHAPTERS[nextIndex];
       return {
         version: Data.VERSION,
@@ -685,7 +1014,7 @@
           health: clamp(this.player.health + 18, 1, 100),
           battery: clamp(this.player.battery + 24, 0, 100),
           flashes: Math.min(6, this.player.flashes + 1),
-          lampOn: this.player.battery > 0,
+          lampOn: this.player.lampOn || this.player.battery <= 0,
           calm: clamp(this.player.calm + 25, 0, 100)
         },
         aziz: {
@@ -698,8 +1027,42 @@
         objectStates: {},
         enemyStates: [],
         elapsed: 0,
+        campaignElapsed: finite(this.campaignElapsed, this.elapsed),
+        difficulty: this.profile.difficulty,
+        campaignDifficulty: clone(this.campaignDifficulty),
+        campaignEvents: clone(this.campaignEvents || emptyCampaignEvents()),
         stats: { ...this.stats },
         chapterStats: clone(DEFAULT_CHAPTER_STATS)
+      };
+    }
+
+    trackDifficulty() {
+      const current = knownDifficulty(this.profile.difficulty) || DEFAULT_PROFILE.difficulty;
+      this.campaignDifficulty ||= { started: null, lowest: current, fromStart: false };
+      const previous = DIFFICULTY_ORDER.indexOf(this.campaignDifficulty.lowest);
+      if (previous < 0 || DIFFICULTY_ORDER.indexOf(current) < previous) this.campaignDifficulty.lowest = current;
+    }
+
+    recordCampaignEvent(kind, id) {
+      this.campaignEvents ||= emptyCampaignEvents();
+      const events = this.campaignEvents[kind];
+      const first = !events.includes(id);
+      if (first) events.push(id);
+      const counter = { objectives: 'objectives', responses: 'correctResponses', chapters: 'chaptersCompleted' }[kind];
+      this.stats[counter] = events.length;
+      return first;
+    }
+
+    checkpointState() {
+      this.trackDifficulty();
+      return {
+        ...clone(this.checkpoint),
+        stats: { ...this.stats },
+        chapterStats: { ...this.chapterStats },
+        campaignEvents: clone(this.campaignEvents || emptyCampaignEvents()),
+        campaignDifficulty: clone(this.campaignDifficulty),
+        difficulty: this.profile.difficulty,
+        campaignElapsed: finite(this.campaignElapsed, this.elapsed)
       };
     }
 
@@ -761,16 +1124,18 @@
     update(dt) {
       const gamepad = this.input.pollGamepad();
       if (this.mode !== 'playing') return;
-      if (this.input.take('Escape', 'Pad:pause', 'Touch:pause')) {
+      if (this.input.take(...actionCodes(this.profile, 'pause'))) {
         this.togglePause();
         return;
       }
-      if (this.input.take('Tab', 'KeyJ')) {
+      if (this.input.take(...actionCodes(this.profile, 'journal'))) {
         this.openJournal();
         return;
       }
 
+      this.trackDifficulty();
       this.elapsed += dt;
+      this.campaignElapsed = finite(this.campaignElapsed, 0) + dt;
       this.flashTime = Math.max(0, this.flashTime - dt * 1.68);
       this.callCooldown = Math.max(0, this.callCooldown - dt);
       this.signalCooldown = Math.max(0, this.signalCooldown - dt);
@@ -782,15 +1147,16 @@
         if (this.noiseEvent.ttl <= 0) this.noiseEvent = null;
       }
 
-      let forward = (this.input.down('KeyW', 'KeyZ', 'ArrowUp') ? 1 : 0) - (this.input.down('KeyS', 'ArrowDown') ? 1 : 0) - this.input.touchY - gamepad.moveY;
-      let strafe = (this.input.down('KeyD', 'ArrowRight') ? 1 : 0) - (this.input.down('KeyA', 'KeyQ', 'ArrowLeft') ? 1 : 0) + this.input.touchX + gamepad.moveX;
-      const running = this.input.down('ShiftLeft', 'ShiftRight') || gamepad.run;
+      let forward = (this.input.down(...actionKeys(this.profile, 'forward')) ? 1 : 0) - (this.input.down(...actionKeys(this.profile, 'backward')) ? 1 : 0) - this.input.touchY - gamepad.moveY;
+      let strafe = (this.input.down(...actionKeys(this.profile, 'strafeRight')) ? 1 : 0) - (this.input.down(...actionKeys(this.profile, 'strafeLeft')) ? 1 : 0) + this.input.touchX + gamepad.moveX;
+      const running = this.input.down(...actionKeys(this.profile, 'run')) || gamepad.run || this.input.touchSprintActive;
+      const keyboardTurn = (this.input.down(...actionKeys(this.profile, 'turnRight')) ? 1 : 0) - (this.input.down(...actionKeys(this.profile, 'turnLeft')) ? 1 : 0);
       const magnitude = Math.hypot(forward, strafe);
       if (magnitude > 1) {
         forward /= magnitude;
         strafe /= magnitude;
       }
-      this.player.a += this.input.turn * this.profile.options.sensitivity + gamepad.turn * dt * 2.2 * this.profile.options.sensitivity;
+      this.player.a += this.input.turn * this.profile.options.sensitivity + (gamepad.turn + keyboardTurn) * dt * 2.2 * this.profile.options.sensitivity;
       const speed = 2.08 * (running ? 1.58 : 1) * dt;
       if (magnitude > .08) {
         this.movePlayer(
@@ -805,11 +1171,11 @@
         }
       }
 
-      if (this.input.take('KeyE', 'Enter', 'Mouse0', 'Pad:interact', 'Touch:interact')) this.interact();
-      if (this.input.take('KeyF', 'Pad:call', 'Touch:call')) this.callAziz();
-      if (this.input.take('KeyC', 'Mouse2', 'Pad:signal', 'Touch:signal')) this.signalAziz();
-      if (this.input.take('Space', 'Pad:flash', 'Touch:flash')) this.flash();
-      if (this.input.take('KeyL', 'Pad:lamp', 'Touch:lamp')) {
+      if (this.input.take(...actionCodes(this.profile, 'interact'))) this.interact();
+      if (this.input.take(...actionCodes(this.profile, 'call'))) this.callAziz();
+      if (this.input.take(...actionCodes(this.profile, 'signal'))) this.signalAziz();
+      if (this.input.take(...actionCodes(this.profile, 'flash'))) this.flash();
+      if (this.input.take(...actionCodes(this.profile, 'lamp'))) {
         if (this.player.battery <= 0) this.say('La lampe n’a plus d’huile.', 1.6);
         else {
           this.player.lampOn = !this.player.lampOn;
@@ -847,6 +1213,10 @@
       if (this.toastTimer > 0) {
         this.toastTimer -= dt;
         if (this.toastTimer <= 0) $('#toast').classList.remove('visible');
+      }
+      if (this.voiceFallbackTimer > 0) {
+        this.voiceFallbackTimer -= dt;
+        if (this.voiceFallbackTimer <= 0) $('#voice-fallback').classList.remove('visible');
       }
     }
 
@@ -924,6 +1294,7 @@
       } else if (object.type === 'inscription') {
         object.done = true;
         this.completedIds.add(object.id);
+        this.recordDiscovery(object);
         this.say(`RELEVÉ DE TERRAIN — « ${object.text} »`, 5, true);
       } else if (object.type === 'door') {
         if (!this.objectiveComplete) {
@@ -951,13 +1322,14 @@
       const access = canOperateObjective(this.level.kind, this.aziz);
       if (this.level.mechanic === 'align' && access.projector.id === 'sweep' && access.projector.online && access.projector.link >= access.rule.minLink) {
         object.revealed = true;
+        this.recordDiscovery(object);
         this.say(`${object.label}: la poussière désigne ${ORIENTATIONS[object.targetOrientation]}. Passez en Focalisé.`, 3.2, true);
         this.save(true);
         return;
       }
       if (!access.ok) {
         const mode = access.rule.mode === 'focus' ? 'Focalisé' : 'Balayage';
-        this.say(`Lien insuffisant: demandez à Aziz le mode ${mode} (C / clic droit).`, 3);
+        this.say(`Lien insuffisant: demandez à Aziz le mode ${mode} (${actionLabel(this.profile, this.input.lastDevice, 'signal')}).`, 3);
         return;
       }
       if (this.level.mechanic === 'channel') {
@@ -991,8 +1363,12 @@
           this.say(`Aziz reprend son souffle · ${this.callCooldown.toFixed(1)} s avant de révéler le souvenir.`, 2);
           return;
         }
+        if (!this.isMemoryAnchored(object)) {
+          this.say('Rapprochez-vous et gardez le souvenir dans le faisceau Balayage.', 2.8, true);
+          return;
+        }
         this.challenge = { type: 'memory', objectId: object.id, remaining: 5 };
-        this.say(`${object.label} apparaît. Appelez Aziz maintenant [F].`, 4, true);
+        this.say(`${object.label} apparaît. Gardez le faisceau sur lui et appelez Aziz [${actionLabel(this.profile, this.input.lastDevice, 'call')}].`, 4, true);
       }
     }
 
@@ -1000,11 +1376,12 @@
       if (object.done) return;
       object.done = true;
       object.progress = 1;
+      this.recordDiscovery(object);
       this.completedIds.add(object.id);
       this.objectiveCount = this.level.objects.filter(item => item.type === this.level.kind && item.done).length;
       this.objectiveComplete = this.objectiveCount >= this.level.target;
-      this.stats.objectives++;
-      this.aziz.sync = clamp(this.aziz.sync + 4, 0, 100);
+      this.stats.objectiveAttempts = finite(this.stats.objectiveAttempts, 0) + 1;
+      if (this.recordCampaignEvent('objectives', object.id)) this.aziz.sync = clamp(this.aziz.sync + 4, 0, 100);
       this.director.grace = Math.max(this.director.grace, 4.5);
       this.director.surge = Math.max(0, this.director.surge - .18);
       this.say(`${message} · ${this.objectiveCount}/${this.level.target}`, 2.4);
@@ -1061,8 +1438,24 @@
       }
     }
 
+    isMemoryAnchored(object) {
+      return !!object && object.type === 'memory' && !object.done &&
+        Math.hypot(object.x - this.player.x, object.y - this.player.y) <= 1.65 &&
+        canOperateObjective('memory', this.aziz).ok && this.lightAt(object.x, object.y).projector > .02;
+    }
+
+    clearInactiveVeilChallenge() {
+      if (this.challenge?.type === 'veil' && !this.level.enemies.some(enemy => enemy.id === this.challenge.enemyId && enemy.alive)) this.challenge = null;
+    }
+
     updateChallenge(dt) {
+      this.clearInactiveVeilChallenge();
       if (!this.challenge) return;
+      if (this.challenge.type === 'memory' && !this.isMemoryAnchored(this.level.objects.find(item => item.id === this.challenge.objectId))) {
+        this.challenge = null;
+        this.say('Le souvenir a quitté le faisceau. Rapprochez-vous pour le révéler à nouveau.', 3, true);
+        return;
+      }
       this.challenge.remaining -= dt;
       if (this.challenge.remaining > 0) return;
       if (this.challenge.type === 'memory') {
@@ -1070,15 +1463,13 @@
         this.aziz.corruption = clamp(this.aziz.corruption + 4, 0, 100);
         this.say('Le souvenir se referme avec une voix qui n’est pas la sienne.', 3, true);
       } else {
-        this.aziz.trust = clamp(this.aziz.trust - 6, 0, 100);
-        this.aziz.corruption = clamp(this.aziz.corruption + 6, 0, 100);
-        this.director.surge = 1;
-        this.say('Vous avez répondu au faux Aziz.', 3, true);
+        this.say('Vous gardez le silence. La fausse voix s’éteint sans réponse.', 3, true);
       }
       this.challenge = null;
     }
 
     callAziz() {
+      this.clearInactiveVeilChallenge();
       if (this.callCooldown > 0) {
         this.say(`Aziz reprend son souffle · ${this.callCooldown.toFixed(1)} s`, 1.2);
         return;
@@ -1089,20 +1480,26 @@
       this.emitNoise(10, 1.3);
       if (this.challenge?.type === 'memory') {
         const object = this.level.objects.find(item => item.id === this.challenge.objectId);
+        const anchored = this.challenge.remaining > 0 && this.isMemoryAnchored(object);
         this.challenge = null;
-        if (object) {
-          this.stats.correctResponses++;
-          this.aziz.trust = clamp(this.aziz.trust + 4.5, 0, 100);
-          this.aziz.sync = clamp(this.aziz.sync + 8, 0, 100);
-          this.aziz.wake = clamp(this.aziz.wake + 7, 0, 100);
+        if (anchored) {
+          if (this.recordCampaignEvent('responses', `memory:${object.id}`)) {
+            this.aziz.trust = clamp(this.aziz.trust + 4.5, 0, 100);
+            this.aziz.sync = clamp(this.aziz.sync + 8, 0, 100);
+            this.aziz.wake = clamp(this.aziz.wake + 7, 0, 100);
+          }
           this.completeObjective(object, `Aziz reconnaît ${object.label.toLowerCase()}`);
           this.audio.voice('Je me souviens. Ne laisse pas la lumière me prendre.');
-        }
+        } else this.say('Le souvenir a quitté le faisceau. Révélez-le à nouveau avant d’appeler.', 3, true);
         return;
       }
       if (this.challenge?.type === 'veil') {
-        this.aziz.trust = clamp(this.aziz.trust - 2, 0, 100);
-        this.aziz.corruption = clamp(this.aziz.corruption + 2.5, 0, 100);
+        this.challenge = null;
+        this.aziz.trust = clamp(this.aziz.trust - 6, 0, 100);
+        this.aziz.corruption = clamp(this.aziz.corruption + 6, 0, 100);
+        this.director.surge = 1;
+        this.say('Vous avez répondu au faux Aziz. Le lien vacille.', 3, true);
+        return;
       }
       const wasFailing = this.aziz.wake < 28;
       this.aziz.wake = clamp(this.aziz.wake + 14, 0, 100);
@@ -1118,6 +1515,7 @@
     }
 
     signalAziz() {
+      this.clearInactiveVeilChallenge();
       if (this.signalCooldown > 0) {
         this.aziz.sync = clamp(this.aziz.sync - 3, 0, 100);
         this.aziz.trust = clamp(this.aziz.trust - .55, 0, 100);
@@ -1136,10 +1534,12 @@
           enemy.state = 'stunned';
           enemy.memory = 0;
         }
+        const responseId = `veil:${this.challenge.enemyId}`;
         this.challenge = null;
-        this.stats.correctResponses++;
-        this.aziz.trust = clamp(this.aziz.trust + 3, 0, 100);
-        this.aziz.sync = clamp(this.aziz.sync + 9, 0, 100);
+        if (this.recordCampaignEvent('responses', responseId)) {
+          this.aziz.trust = clamp(this.aziz.trust + 3, 0, 100);
+          this.aziz.sync = clamp(this.aziz.sync + 9, 0, 100);
+        }
         this.say('Contre-signal reconnu. La fausse voix recule.', 2.8, true);
         this.audio.tone(512, .28, 'sine', .12);
         return;
@@ -1197,26 +1597,57 @@
       this.say('FLASH AU MAGNÉSIUM', .8);
     }
 
-    moveEnemy(enemy, targetX, targetY, distance, speed) {
-      if (!Number.isFinite(distance) || distance < .001) return;
-      const dx = (targetX - enemy.x) / distance * speed;
-      const dy = (targetY - enemy.y) / distance * speed;
-      const radius = .18;
-      const canX = !this.wall(enemy.x + dx + Math.sign(dx) * radius, enemy.y);
-      const canY = !this.wall(enemy.x, enemy.y + dy + Math.sign(dy) * radius);
-      if (canX) enemy.x += dx;
-      if (canY) enemy.y += dy;
-      if (!canX && !canY) {
-        const side = enemy.id.length % 2 ? 1 : -1;
-        const sidestepX = -dy * side;
-        const sidestepY = dx * side;
-        if (!this.wall(enemy.x + sidestepX, enemy.y)) enemy.x += sidestepX;
-        else if (!this.wall(enemy.x, enemy.y + sidestepY)) enemy.y += sidestepY;
+    enemyPathClear(fromX, fromY, toX, toY) {
+      const steps = Math.max(1, Math.ceil(Math.hypot(toX - fromX, toY - fromY) / .12));
+      for (let step = 1; step <= steps; step++) {
+        const x = fromX + (toX - fromX) * step / steps;
+        const y = fromY + (toY - fromY) * step / steps;
+        for (const dx of [-.18, .18]) for (const dy of [-.18, .18]) {
+          if (this.wall(x + dx, y + dy)) return false;
+        }
+      }
+      return true;
+    }
+
+    moveEnemy(enemy, targetX, targetY, distance, speed, useRoute = true) {
+      if (!Number.isFinite(distance) || distance < .001 || !Number.isFinite(speed) || speed <= 0) return;
+      if (!useRoute || this.enemyPathClear(enemy.x, enemy.y, targetX, targetY)) {
+        enemy.route = null;
+      } else {
+        const targetCell = `${Math.floor(targetX)}:${Math.floor(targetY)}`;
+        const needsRoute = !enemy.route || !enemy.route.length || enemy.routeTarget !== targetCell;
+        // Au plus deux recherches par frame, espacées de 650 ms par menace.
+        // Une route valide vers la même case est réutilisée jusqu’à son terme.
+        if (needsRoute && this.elapsed >= (enemy.nextRouteAt || 0) && (this.navigationBudget === undefined || this.navigationBudget > 0)) {
+          if (this.navigationBudget !== undefined) this.navigationBudget--;
+          enemy.route = Mechanics.findGridRoute(this.level.grid, enemy, { x: targetX, y: targetY }).path;
+          enemy.routeTarget = targetCell;
+          enemy.nextRouteAt = this.elapsed + .65;
+        }
+        while (enemy.route?.length && Math.hypot(enemy.route[0].x - enemy.x, enemy.route[0].y - enemy.y) < .03) enemy.route.shift();
+        if (!enemy.route?.length) {
+          enemy.state = 'search';
+          return;
+        }
+        targetX = enemy.route[0].x;
+        targetY = enemy.route[0].y;
+        distance = Math.hypot(targetX - enemy.x, targetY - enemy.y);
+      }
+      const step = Math.min(speed, distance);
+      const x = enemy.x + (targetX - enemy.x) / distance * step;
+      const y = enemy.y + (targetY - enemy.y) / distance * step;
+      if (this.enemyPathClear(enemy.x, enemy.y, x, y)) {
+        enemy.x = x;
+        enemy.y = y;
+      } else {
+        if (this.enemyPathClear(enemy.x, enemy.y, x, enemy.y)) enemy.x = x;
+        if (this.enemyPathClear(enemy.x, enemy.y, enemy.x, y)) enemy.y = y;
       }
     }
 
     updateEnemies(dt, difficulty) {
       this.danger = 0;
+      this.navigationBudget = 2;
       for (const enemy of this.level.enemies) {
         if (!enemy.alive) continue;
         const definition = Data.THREATS[enemy.type];
@@ -1246,10 +1677,10 @@
 
         if (enemy.type === 'veiled') {
           enemy.mimicCooldown = Math.max(0, (enemy.mimicCooldown || 0) - dt);
-          if (distance < 3.4 && !this.challenge && enemy.mimicCooldown <= 0) {
+          if (distance < 3.4 && lineOfSight && !this.challenge && enemy.mimicCooldown <= 0 && enemy.stun <= 0) {
             enemy.mimicCooldown = 18;
             this.challenge = { type: 'veil', enemyId: enemy.id, remaining: 4.2 };
-            this.say('« Je suis là. Éteins la lampe. » — Répondez par le contre-signal [C].', 4.2, true);
+            this.say(`« Je suis là. Éteins la lampe. » — Gardez le silence ou transmettez le contre-signal [${actionLabel(this.profile, this.input.lastDevice, 'signal')}].`, 4.2, true);
             this.audio.voice('Je suis là. Éteins la lampe.', true);
           }
         }
@@ -1258,6 +1689,7 @@
         let targetX = this.player.x;
         let targetY = this.player.y;
         let chase = false;
+        let fleeing = false;
         if (enemy.type === 'ushabti') {
           chase = lineOfSight && distance < definition.sense * difficulty.enemySense;
           if (light.total > .08) shouldMove = false;
@@ -1268,6 +1700,7 @@
             if (this.player.battery <= 0) this.player.lampOn = false;
           }
           if (light.portable > .06) {
+            fleeing = true;
             targetX = enemy.x - dx;
             targetY = enemy.y - dy;
           }
@@ -1279,7 +1712,12 @@
             enemy.state = 'investigate';
           }
           chase = lineOfSight && distance < definition.sense * difficulty.enemySense;
-          if (!chase && enemy.memory > 0 && Number.isFinite(enemy.targetX)) {
+          if (chase) {
+            enemy.targetX = this.player.x;
+            enemy.targetY = this.player.y;
+            enemy.memory = 5.5;
+          }
+          if (!chase && enemy.memory > 0 && Number.isFinite(enemy.targetX) && Number.isFinite(enemy.targetY)) {
             targetX = enemy.targetX;
             targetY = enemy.targetY;
             chase = true;
@@ -1300,7 +1738,7 @@
           enemy.state = lineOfSight ? 'chase' : 'investigate';
           const targetDistance = Math.hypot(targetX - enemy.x, targetY - enemy.y);
           const pressureBoost = .86 + this.director.pressure * .3;
-          this.moveEnemy(enemy, targetX, targetY, targetDistance, definition.speed * difficulty.enemySpeed * pressureBoost * dt);
+          this.moveEnemy(enemy, targetX, targetY, targetDistance, definition.speed * difficulty.enemySpeed * pressureBoost * dt, !fleeing);
         } else if (enemy.stun > 0) enemy.state = 'stunned';
         else enemy.state = 'dormant';
 
@@ -1322,6 +1760,31 @@
       }
     }
 
+    updateThreatAudio(dt) {
+      this.threatCueRemaining = Math.max(0, finite(this.threatCueRemaining, 0) - dt);
+      const status = $('#threat-status');
+      if (!this.profile.options.directionCues || this.threatCueRemaining <= 0) status.classList.remove('visible');
+      if (this.elapsed < finite(this.nextThreatCue, 0)) return;
+      const source = this.level.enemies.filter(enemy => enemy.alive && finite(enemy.stun, 0) <= 0 && ['chase', 'investigate'].includes(enemy.state))
+        .map(enemy => ({ enemy, distance: Math.hypot(enemy.x - this.player.x, enemy.y - this.player.y) }))
+        .filter(item => item.distance < 5.5)
+        .sort((a, b) => a.distance - b.distance)[0];
+      if (!source) return;
+      const { enemy, distance } = source;
+      const relative = angleDelta(this.player.a, Math.atan2(enemy.y - this.player.y, enemy.x - this.player.x));
+      const visible = this.hasLineOfSight(this.player.x, this.player.y, enemy.x, enemy.y);
+      const frequency = { ushabti: 82, scarabs: 630, jackal: 145, scribe: 260, veiled: 390, pharaoh: 52 }[enemy.type] || 145;
+      this.audio.tone(frequency, .18, enemy.type === 'scarabs' ? 'sawtooth' : 'triangle',
+        (.025 + (1 - distance / 5.5) * .06) * (visible ? 1 : .25), Math.sin(relative), 'effects');
+      this.nextThreatCue = this.elapsed + 1.7;
+      if (this.profile.options.directionCues) {
+        const direction = Math.abs(relative) > 2.45 ? 'DERRIÈRE' : relative < -.4 ? 'À GAUCHE' : relative > .4 ? 'À DROITE' : 'DEVANT';
+        status.textContent = `${Data.THREATS[enemy.type].name} · ${direction}${visible ? '' : ' · ÉTOUFFÉ'}`;
+        status.classList.add('visible');
+        this.threatCueRemaining = 1.4;
+      }
+    }
+
     updateDirector(dt, difficulty) {
       const target = tensionTarget({
         chapterIndex: this.chapterIndex,
@@ -1335,13 +1798,13 @@
       }) * difficulty.director;
       this.director.pressure += (clamp(target, .03, 1) - this.director.pressure) * Math.min(1, dt * .8);
       this.player.calm = clamp(this.player.calm + dt * (this.danger < .15 ? 3 : -this.director.pressure * 5), 0, 100);
+      this.updateThreatAudio(dt);
       if (this.elapsed >= this.director.nextEvent && this.director.pressure > .32) {
-        const pan = Math.random() * 1.6 - .8;
-        this.audio.noise(.18 + this.director.pressure * .25, .035 + this.director.pressure * .04, pan);
-        if (this.director.pressure > .72 && this.profile.options.directionCues) {
-          $('#threat-status').textContent = pan < 0 ? 'BRUIT À GAUCHE' : 'BRUIT À DROITE';
+        this.audio.noise(.18 + this.director.pressure * .25, .035 + this.director.pressure * .04, 0, 'ambience');
+        if (this.director.pressure > .72 && this.profile.options.directionCues && this.threatCueRemaining <= 0) {
+          $('#threat-status').textContent = 'CRAQUEMENT DU TEMPLE · AMBIANCE';
           $('#threat-status').classList.add('visible');
-          setTimeout(() => $('#threat-status').classList.remove('visible'), 1400);
+          this.threatCueRemaining = 1.4;
         }
         this.director.nextEvent = this.elapsed + 7 + Math.random() * 8 - this.director.pressure * 3;
       }
@@ -1360,6 +1823,7 @@
           }
           return;
         }
+        this.recordCampaignEvent('chapters', this.level.id);
         this.finish(endingKey(this.aziz, this.stats));
         return;
       }
@@ -1367,7 +1831,7 @@
       this.unlock('intouchable', this.chapterStats.hits === 0);
       this.unlock('sans_flash', this.chapterStats.flashes === 0);
       this.unlock('angle_parfait', this.level.kind === 'mirror' && this.chapterStats.mirrorErrors === 0);
-      this.stats.chaptersCompleted++;
+      this.recordCampaignEvent('chapters', this.level.id);
       this.profile.unlocked = Math.max(this.profile.unlocked, this.chapterIndex + 2);
       this.storage.saveProfile(this.profile);
       this.loadChapter(this.chapterIndex + 1, this.transitionState(this.chapterIndex + 1), true);
@@ -1381,8 +1845,7 @@
       document.exitPointerLock?.();
       setTimeout(() => {
         const recovery = Data.DIFFICULTIES[this.profile.difficulty].checkpointRecovery;
-        const checkpoint = clone(this.checkpoint);
-        checkpoint.stats = { ...this.stats };
+        const checkpoint = this.checkpointState();
         checkpoint.player.health = Math.max(checkpoint.player.health, 28 + recovery * 22);
         checkpoint.player.battery = Math.max(checkpoint.player.battery, 16 + recovery * 20);
         this.loadChapter(checkpoint.chapterIndex, checkpoint, true);
@@ -1390,13 +1853,14 @@
     }
 
     finish(key) {
+      this.trackDifficulty();
       this.mode = 'ending';
       this.input.reset();
       document.exitPointerLock?.();
       const ending = Data.ENDINGS[key];
       $('#ending-title').textContent = ending.title;
       $('#ending-text').textContent = ending.text;
-      $('#ending-stats').textContent = `${formatDuration(this.elapsed)} dans le dernier chapitre · confiance ${Math.round(this.aziz.trust)} · corruption ${Math.round(this.aziz.corruption)} · ${this.stats.deaths} mort(s)`;
+      $('#ending-stats').textContent = `${formatDuration(finite(this.campaignElapsed, this.elapsed))} de campagne · confiance ${Math.round(this.aziz.trust)} · corruption ${Math.round(this.aziz.corruption)} · ${this.stats.deaths} mort(s)`;
       $('#ending-overlay').classList.add('open');
       $('#ending-return').focus();
       this.profile.endings = [...new Set([...this.profile.endings, key])];
@@ -1404,7 +1868,7 @@
       this.unlock('aube', key === 'true_dawn');
       this.unlock('quatre_fins', this.profile.endings.length === 4);
       this.unlock('fin_campagne', true);
-      this.unlock('eclipse', this.profile.difficulty === 'eclipse');
+      this.unlock('eclipse', this.campaignDifficulty.fromStart && this.campaignDifficulty.started === 'eclipse' && this.campaignDifficulty.lowest === 'eclipse' && this.stats.chaptersCompleted === Data.CHAPTERS.length);
       this.storage.saveProfile(this.profile);
       this.storage.clear();
       this.audio.suspend(true);
@@ -1453,12 +1917,35 @@
       openPanel('journal', 'game');
     }
 
+    recordDiscovery(object, persist = true) {
+      if (object.type !== 'inscription' && object.type !== this.level.kind) return;
+      if (!object.done && !object.revealed) return;
+      this.profile.notebook ||= [];
+      if (this.profile.notebook.includes(object.id)) return;
+      this.profile.notebook.push(object.id);
+      if (persist) this.storage.saveProfile(this.profile);
+    }
+
+    showVoiceFallback(text) {
+      if (this.mode !== 'playing') return;
+      const fallback = $('#voice-fallback');
+      fallback.textContent = `AZIZ · ${text}`;
+      fallback.classList.add('visible');
+      this.voiceFallbackTimer = clamp(String(text).length / 18, 4, 8);
+      // Speech fallback has its own display and lifetime. It never replaces a
+      // gameplay instruction or writes an older line into the discovery notebook.
+    }
+
     say(text, seconds = 2, kind = 'gameplay') {
       if (kind === 'speech' && this.profile.options.subtitles === false) return;
       const toast = $('#toast');
       toast.textContent = text;
       toast.classList.add('visible');
       this.toastTimer = seconds;
+      if (this.level?.id && kind !== 'speech') {
+        this.profile.notebookRecent = { chapterId: this.level.id, text: String(text).slice(0, 1000) };
+        this.storage?.saveProfile(this.profile);
+      }
       // Les indices, archives et résultats d’action restent toujours lisibles.
       // Le réglage des sous-titres s’applique seulement aux répliques parlées.
     }
@@ -1480,13 +1967,20 @@
       document.body.classList.toggle('link-critical', projector.link < 24);
       const object = this.nearestObject();
       const exitDistance = Math.hypot(this.level.exit.x - this.player.x, this.level.exit.y - this.player.y);
+      const exitAngle = angleDelta(this.player.a, Math.atan2(this.level.exit.y - this.player.y, this.level.exit.x - this.player.x));
+      const exitVisible = exitDistance < 2.8 && Math.abs(exitAngle) <= this.profile.options.fov * Math.PI / 360 &&
+        this.hasLineOfSight(this.player.x, this.player.y, this.level.exit.x, this.level.exit.y);
       const prompt = $('#prompt');
       if (object) {
-        prompt.textContent = `[ E ] ${object.label}`;
+        prompt.textContent = `[ ${actionLabel(this.profile, this.input.lastDevice, 'interact')} ] ${object.label}`;
         prompt.classList.add('visible');
-      } else if (this.objectiveComplete && exitDistance < 1.8) {
+      } else if (exitVisible) {
         const pharaoh = this.level.enemies.find(enemy => enemy.type === 'pharaoh' && enemy.alive);
-        prompt.textContent = pharaoh ? 'LE SEUIL REFUSE L’OMBRE DU PHARAON' : 'AVANCEZ VERS LE PASSAGE';
+        const state = !this.objectiveComplete ? 'PASSAGE SCELLÉ' : pharaoh ? 'SEUIL RETENU PAR LE PHARAON' : 'PASSAGE OUVERT';
+        const destination = Data.CHAPTERS[this.chapterIndex + 1]?.title || 'Retour à la surface';
+        const chapterArchives = Data.ARCHIVES.filter(archive => archive.chapter === this.chapterIndex);
+        const found = chapterArchives.filter(archive => this.profile.archives.includes(archive.id)).length;
+        prompt.textContent = `${state} · ${destination} · ${this.objectiveCount}/${this.level.target} mécanismes · ${found}/${chapterArchives.length} archives`;
         prompt.classList.add('visible');
       } else {
         prompt.textContent = '';
@@ -1515,9 +2009,9 @@
         return;
       }
       tutorial.classList.add('visible');
-      if (this.stats.signals === 0) tutorial.innerHTML = '<b>1 · LIER LE PROJECTEUR</b><span>C ou clic droit: transmettez le code à Aziz et choisissez Focalisé.</span>';
-      else if (this.objectiveCount === 0) tutorial.innerHTML = '<b>2 · CHARGER UN SCEAU</b><span>Approchez un sceau, visez-le puis E. Restez dans le faisceau.</span>';
-      else if (this.player.battery > 70) tutorial.innerHTML = '<b>3 · GÉRER LA NUIT</b><span>L coupe la lampe. F appelle Aziz mais le bruit attire le Chacal.</span>';
+      if (this.stats.signals === 0) tutorial.innerHTML = `<b>1 · LIER LE PROJECTEUR</b><span>${actionLabel(this.profile, this.input.lastDevice, 'signal')} : transmettez le code à Aziz et choisissez Focalisé.</span>`;
+      else if (this.objectiveCount === 0) tutorial.innerHTML = `<b>2 · CHARGER UN SCEAU</b><span>Approchez un sceau, visez-le puis ${actionLabel(this.profile, this.input.lastDevice, 'interact')}. Restez dans le faisceau.</span>`;
+      else if (this.player.battery > 70) tutorial.innerHTML = `<b>3 · GÉRER LA NUIT</b><span>${actionLabel(this.profile, this.input.lastDevice, 'lamp')} coupe la lampe. ${actionLabel(this.profile, this.input.lastDevice, 'call')} appelle Aziz mais le bruit attire le Chacal.</span>`;
       else {
         this.profile.onboardingComplete = true;
         this.storage.saveProfile(this.profile);
@@ -1537,54 +2031,22 @@
     }
 
     drawObjectSprite(context, sprite, size) {
-      const kind = sprite.type;
-      context.save();
-      context.shadowBlur = kind === 'archive' ? 20 : 14;
-      context.shadowColor = sprite.color;
-      context.fillStyle = sprite.color;
-      if (kind === 'archive') {
-        context.rotate(-.08);
-        context.fillRect(-size * .13, -size * .2, size * .26, size * .4);
-        context.strokeStyle = '#d8edf2';
-        context.lineWidth = Math.max(1, size * .012);
-        for (let row = -2; row <= 2; row++) {
-          context.beginPath();
-          context.moveTo(-size * .08, row * size * .055);
-          context.lineTo(size * .08, row * size * .055);
-          context.stroke();
-        }
-      } else if (kind === 'bell') {
-        context.beginPath();
-        context.moveTo(-size * .18, size * .16);
-        context.quadraticCurveTo(-size * .12, -size * .2, 0, -size * .25);
-        context.quadraticCurveTo(size * .12, -size * .2, size * .18, size * .16);
-        context.closePath();
-        context.fill();
-      } else if (kind === 'oil' || kind === 'flash') {
-        context.fillRect(-size * .12, -size * .19, size * .24, size * .38);
-        context.fillStyle = '#f6db9a';
-        context.fillRect(-size * .05, -size * .25, size * .1, size * .07);
-      } else if (kind === 'door') {
-        context.fillRect(-size * .22, -size * .42, size * .44, size * .84);
-        context.fillStyle = '#100b08';
-        context.fillRect(-size * .14, -size * .33, size * .28, size * .68);
-      } else {
-        context.rotate((sprite.orientation || 0) * Math.PI / 2);
-        context.beginPath();
-        context.moveTo(0, -size * .28);
-        context.lineTo(size * .18, 0);
-        context.lineTo(0, size * .28);
-        context.lineTo(-size * .18, 0);
-        context.closePath();
-        context.fill();
-        context.fillStyle = '#fff0bd';
-        context.fillRect(-size * .025, -size * .18, size * .05, size * .36);
-      }
-      context.restore();
+      Visuals.drawProp(context, sprite, size);
     }
 
-    drawEnemySprite(context, sprite, size) {
+    drawViewmodel(context, width, height, projector) {
+      Visuals.drawViewmodel(context, width, height, {
+        lampOn: this.player.lampOn, battery: this.player.battery, projector,
+        signalActive: this.signalCooldown > 0, magnesium: this.flashTime > 0,
+        veil: this.challenge?.type === 'veil', reduceFlashes: this.profile.options.reduceFlashes === true
+      });
+    }
+
+    drawEnemySprite(context, sprite, pixelsPerUnit) {
+      const dimensions = Visuals.enemyMetrics(sprite.type);
+      const size = pixelsPerUnit * dimensions.unitScale;
       context.save();
+      context.translate(0, -dimensions.bottom * size);
       const color = Data.THREATS[sprite.type].color;
       context.fillStyle = '#050403';
       context.strokeStyle = color;
@@ -1654,11 +2116,13 @@
           context.fill();
         }
       }
-      context.fillStyle = sprite.state === 'stunned' ? '#fff6cf' : '#f3a654';
-      context.shadowColor = context.fillStyle;
-      context.shadowBlur = 8;
-      context.fillRect(-size * .07, -size * .31, size * .035, size * .025);
-      context.fillRect(size * .035, -size * .31, size * .035, size * .025);
+      if (sprite.type !== 'scarabs') {
+        context.fillStyle = sprite.state === 'stunned' ? '#fff6cf' : '#f3a654';
+        context.shadowColor = context.fillStyle;
+        context.shadowBlur = 8;
+        context.fillRect(-size * .07, -size * .31, size * .035, size * .025);
+        context.fillRect(size * .035, -size * .31, size * .035, size * .025);
+      }
       context.restore();
     }
 
@@ -1666,11 +2130,14 @@
       const context = this.ctx;
       const width = this.canvas.width;
       const height = this.canvas.height;
-      const fov = this.profile.options.fov * Math.PI / 180;
+      const options = this.profile.options;
+      const fov = options.fov * Math.PI / 180;
+      const camera = Visuals.createCamera(width, height, fov);
       const projector = projectorState(this.aziz);
-      const shake = this.profile.options.reduceMotion ? 0 : (100 - this.player.calm) / 100 * Math.sin(this.elapsed * 19) * 1.8;
+      const portableOn = this.player.lampOn && this.player.battery > 0;
+      const shake = options.reduceMotion ? 0 : (100 - this.player.calm) / 100 * Math.sin(this.elapsed * 19) * 1.8;
       context.save();
-      context.filter = this.profile.options.highContrast ? 'contrast(1.28) brightness(1.12)' : 'none';
+      context.filter = Visuals.sceneFilter(options);
       context.translate(shake, 0);
       context.fillStyle = '#050405';
       context.fillRect(-3, 0, width + 6, height / 2);
@@ -1692,54 +2159,58 @@
       const rays = Math.max(220, Math.min(width, this.profile.options.quality === 'low' ? 300 : Math.floor(500 * Math.min(1, width / 1000))));
       if (this.depth.length !== rays) this.depth = new Float32Array(rays);
       for (let index = 0; index < rays; index++) {
-        const rayAngle = this.player.a - fov / 2 + index / rays * fov;
-        let distance = 0;
-        let x = this.player.x;
-        let y = this.player.y;
+        // Même plan de projection pour les colonnes des murs et les objets.
+        const rayOffset = Math.atan(((index + .5) * width / rays - width / 2) / camera.focal);
+        const rayAngle = this.player.a + rayOffset;
+        const stepX = Math.cos(rayAngle), stepY = Math.sin(rayAngle);
+        let distance = .04;
         for (; distance < 19; distance += .04) {
-          x += Math.cos(rayAngle) * .04;
-          y += Math.sin(rayAngle) * .04;
+          const x = this.player.x + stepX * distance;
+          const y = this.player.y + stepY * distance;
           if (this.wall(x, y)) break;
         }
-        distance *= Math.cos(rayAngle - this.player.a);
+        distance *= Math.cos(rayOffset);
         this.depth[index] = distance;
-        const sliceHeight = Math.min(height, height / (distance + .001));
-        const relative = Math.abs(rayAngle - this.player.a);
-        const portable = this.player.lampOn ? clamp(1 - relative / .38, 0, 1) * clamp(1 - distance / 7, 0, 1) : 0;
+        const wallScale = camera.focal / Math.max(camera.nearPlane, distance);
+        const sliceHeight = camera.wallHeight * wallScale;
+        const wallTop = camera.horizon + (camera.eyeHeight - camera.wallHeight) * wallScale;
+        const relative = Math.abs(rayOffset);
+        const portable = portableOn ? clamp(1 - relative / .38, 0, 1) * clamp(1 - distance / 7, 0, 1) : 0;
         const projected = projector.online ? clamp(1 - relative / projector.cone, 0, 1) * clamp(1 - distance / projector.range, 0, 1) * projector.link / 100 * projector.power : 0;
         const light = clamp(.07 + portable * .8 + projected * .9, .05, 1.25);
         const base = Math.round(13 + light * 112);
         context.fillStyle = `rgb(${base},${Math.round(base * .68)},${Math.round(base * .37)})`;
-        context.fillRect(index * width / rays, (height - sliceHeight) / 2, width / rays + 1, sliceHeight);
+        context.fillRect(index * width / rays, wallTop, width / rays + 1, sliceHeight);
         if (index % 9 === 0) {
           context.fillStyle = 'rgba(18,10,6,.18)';
-          context.fillRect(index * width / rays, (height - sliceHeight) / 2, 1, sliceHeight);
+          context.fillRect(index * width / rays, wallTop, 1, sliceHeight);
         }
       }
 
       const objects = this.level.objects.filter(object => !object.done || !['archive', 'oil', 'flash'].includes(object.type)).map(object => ({
         ...object,
+        active: object.id === this.ritual?.id || object.id === this.challenge?.objectId,
         color: object.done ? '#91b9a1' : object.type === 'archive' ? '#91c4cf' :
           object.type === this.level.kind ? (canOperateObjective(this.level.kind, this.aziz).ok ? '#f4ce73' : '#86633d') : '#aa7d43',
         enemy: false
       }));
-      if (this.objectiveComplete) objects.push({ ...this.level.exit, id: 'exit', type: 'exit', label: 'Passage', color: '#fff0b0', enemy: false });
+      const exitOpen = this.objectiveComplete && !(this.level.finale && this.level.enemies.some(enemy => enemy.type === 'pharaoh' && enemy.alive));
+      objects.push({ ...this.level.exit, id: 'exit', type: 'exit', label: 'Passage',
+        open: exitOpen, color: exitOpen ? '#fff0b0' : '#a78b58', enemy: false });
       const sprites = [
         ...objects,
         ...this.level.enemies.filter(enemy => enemy.alive).map(enemy => ({ ...enemy, enemy: true }))
       ].map(sprite => {
-        const dx = sprite.x - this.player.x;
-        const dy = sprite.y - this.player.y;
-        return { ...sprite, distance: Math.hypot(dx, dy), relative: angleDelta(this.player.a, Math.atan2(dy, dx)) };
-      }).filter(sprite => Math.abs(sprite.relative) < fov * .68 && sprite.distance < 17)
-        .map(sprite => ({ ...sprite, cameraDepth: sprite.distance * Math.cos(sprite.relative) }))
+        const dimensions = sprite.enemy ? Visuals.enemyMetrics(sprite.type) : Visuals.propMetrics(sprite.type);
+        const projection = Visuals.projectSprite(camera, this.player, sprite, dimensions);
+        return projection ? { ...sprite, ...projection } : null;
+      }).filter(Boolean)
         .sort((left, right) => right.cameraDepth - left.cameraDepth);
 
       for (const sprite of sprites) {
-        const screenX = (.5 + sprite.relative / fov) * width;
-        const size = clamp(height / (Math.max(.05, sprite.cameraDepth) * .82), 11, height * .9);
-        const firstRay = Math.max(0, Math.floor((screenX - size * .65 - 30) / width * rays));
-        const lastRay = Math.min(rays - 1, Math.ceil((screenX + size * .65 + 30) / width * rays));
+        const padding = Math.max(8, sprite.scale * .02);
+        const firstRay = Math.max(0, Math.floor((sprite.left - padding) / width * rays));
+        const lastRay = Math.min(rays - 1, Math.ceil((sprite.right + padding) / width * rays));
         context.save();
         context.beginPath();
         let visible = false;
@@ -1756,31 +2227,23 @@
         if (!visible) { context.restore(); continue; }
         context.clip();
         context.globalAlpha = clamp(1 - sprite.distance / 19, .16, 1);
-        context.translate(screenX, height / 2 + size * .08);
-        if (sprite.type === 'exit') {
-          context.strokeStyle = sprite.color;
-          context.shadowColor = sprite.color;
-          context.shadowBlur = 28;
-          context.lineWidth = Math.max(3, size * .04);
-          context.beginPath();
-          context.ellipse(0, 0, size * .28, size * .5, 0, 0, Math.PI * 2);
-          context.stroke();
-        } else if (sprite.enemy) this.drawEnemySprite(context, sprite, size);
-        else this.drawObjectSprite(context, sprite, size);
+        context.translate(sprite.screenX, sprite.baseY);
+        if (sprite.enemy) this.drawEnemySprite(context, sprite, sprite.scale);
+        else this.drawObjectSprite(context, sprite, sprite.scale);
         context.restore();
       }
 
       const fog = context.createRadialGradient(width / 2, height / 2, Math.min(width, height) * .08, width / 2, height / 2, Math.max(width, height) * .7);
       fog.addColorStop(0, 'rgba(0,0,0,0)');
-      fog.addColorStop(.56, `rgba(0,0,0,${this.player.lampOn ? .18 : .38})`);
-      fog.addColorStop(1, `rgba(0,0,0,${this.player.lampOn ? .72 : .91})`);
+      fog.addColorStop(.56, `rgba(0,0,0,${portableOn ? .18 : .38})`);
+      fog.addColorStop(1, `rgba(0,0,0,${portableOn ? .72 : .91})`);
       context.fillStyle = fog;
       context.fillRect(-3, 0, width + 6, height);
-      if (projector.link < 24 && Math.floor(this.elapsed * 12) % 7 === 0) {
+      if (!options.reduceFlashes && projector.link < 24 && Math.floor(this.elapsed * 12) % 7 === 0) {
         context.fillStyle = `rgba(0,0,0,${(24 - projector.link) / 42})`;
         context.fillRect(-3, 0, width + 6, height);
       }
-      if (this.flashTime > 0) {
+      if (!options.reduceFlashes && this.flashTime > 0) {
         context.fillStyle = `rgba(255,239,197,${clamp(this.flashTime * 3.8, 0, 1)})`;
         context.fillRect(-3, 0, width + 6, height);
       }
@@ -1788,10 +2251,15 @@
         context.fillStyle = `rgba(105,0,0,${(38 - this.player.health) / 145})`;
         context.fillRect(-3, 0, width + 6, height);
       }
-      if (this.challenge?.type === 'veil') {
-        context.fillStyle = `rgba(215,210,190,${.025 + Math.sin(this.elapsed * 26) * .018})`;
+      if (!options.reduceFlashes && this.challenge?.type === 'veil') {
+        context.fillStyle = `rgba(215,210,190,${.025 + (options.reduceMotion ? 0 : Math.sin(this.elapsed * 26) * .018)})`;
         context.fillRect(-3, 0, width + 6, height);
       }
+      context.restore();
+      // Le matériel tenu suit le viewport et reste indépendant du FOV et du tremblement.
+      context.save();
+      context.filter = Visuals.sceneFilter(options);
+      this.drawViewmodel(context, width, height, projector);
       context.restore();
     }
   }
@@ -1801,14 +2269,22 @@
   const canvas = $('#game-canvas');
   const audio = new AudioEngine(profile);
   let game = null;
-  const input = new Input(canvas, () => game);
+  const input = new Input(canvas, () => game, () => profile);
   const runtime = { storage, profile, input, audio, get game() { return game; } };
+  audio.onVoiceFallback = text => {
+    if (game?.mode === 'playing') game.showVoiceFallback(text);
+    const status = $('#audio-preview-status');
+    if (status) status.textContent = `Réplique écrite : ${text}`;
+  };
   window.AZIZ = { Data, Mechanics, runtime, Storage, Game };
   let lastFocused = null;
   let deferredInstall = null;
   let pendingConfirmation = null;
   let confirmationFocus = null;
   let optionsSection = 'display';
+  let remappingAction = null;
+  let expeditionDifficulty = profile.difficulty;
+  const collectionView = { category: 'archives', filter: 'all', chapter: 'all', page: 0 };
   storage.onDegraded = () => {
     $('#storage-warning').hidden = false;
     if (game && ['playing', 'paused'].includes(game.mode)) {
@@ -1854,16 +2330,22 @@
       (save.completedIds.includes(object.id) || save.objectStates[object.id]?.done)).length;
     const date = save.savedAt ? new Date(save.savedAt) : null;
     const time = date && Number.isFinite(date.getTime()) ? ` · ${new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(date)}` : '';
-    return `${chapter.title} · ${Data.DIFFICULTIES[profile.difficulty].name} · ${completed}/${chapter.target} objectifs · ${formatDuration(save.elapsed)}${time}`;
+    const difficulty = Object.hasOwn(Data.DIFFICULTIES, save.difficulty) ? save.difficulty : profile.difficulty;
+    return `${chapter.title} · ${Data.DIFFICULTIES[difficulty].name} · ${completed}/${chapter.target} objectifs · ${formatDuration(finite(save.campaignElapsed, save.elapsed))} de campagne${time}`;
   }
 
   function applyOptions() {
     document.documentElement.classList.toggle('large-text', profile.options.largeText);
     document.body.classList.toggle('reduce-motion', profile.options.reduceMotion);
+    document.body.classList.toggle('reduce-flashes', profile.options.reduceFlashes);
     document.body.classList.toggle('large-text', profile.options.largeText);
     document.body.classList.toggle('high-contrast', profile.options.highContrast);
     document.body.classList.toggle('direction-cues', profile.options.directionCues);
-    if (audio.master) audio.master.gain.value = profile.options.volume * .24;
+    document.documentElement.style.setProperty('--calibration-brightness', String(profile.options.brightness));
+    audio.applyMix();
+    document.body.classList.toggle('touch-left', profile.options.touchSide === 'left');
+    document.documentElement.style.setProperty('--touch-scale', profile.options.touchScale);
+    refreshActionHints();
     if (game) {
       game.resize();
       if (game.level && game.mode === 'paused') game.render();
@@ -1902,16 +2384,74 @@
     audio.suspend(false);
   }
 
-  function showPrologue() {
+  function showPrologue(preserveChoice = false) {
     lastFocused = document.activeElement;
     $('#panel').classList.remove('open');
     const currentSave = storage.getSave();
     $('#new-campaign-warning').hidden = !currentSave;
     if (currentSave) $('#new-campaign-warning').textContent = `Expédition en cours : ${formatSaveSummary(currentSave)}. Descendre dans le temple remplacera cette progression. Vos archives, succès et fins seront conservés.`;
+    if (!preserveChoice) expeditionDifficulty = profile.difficulty;
+    const choices = $('#expedition-difficulties');
+    choices.replaceChildren();
+    for (const [key, difficulty] of Object.entries(Data.DIFFICULTIES)) {
+      const label = document.createElement('label');
+      label.className = 'difficulty-choice';
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'expedition-difficulty';
+      radio.value = key;
+      radio.checked = key === expeditionDifficulty;
+      radio.onchange = () => { if (radio.checked) expeditionDifficulty = key; };
+      const text = document.createElement('span');
+      const title = document.createElement('strong');
+      title.textContent = difficulty.name;
+      const description = document.createElement('span');
+      const percent = value => `${Math.round(value * 100)} %`;
+      description.textContent = `${difficulty.description} Dégâts reçus : ${percent(difficulty.damage)} · consommation de lampe : ${percent(difficulty.battery)} du mode Expédition. ${difficulty.hints ? 'Directives de chapitre affichées.' : 'Aucune directive : seuls vos relevés découverts restent consultables.'}`;
+      text.append(title, description);
+      label.append(radio, text);
+      choices.append(label);
+    }
+    refreshActionHints();
     $('#prologue-overlay').classList.add('open');
     input.reset();
     syncModalState();
-    $('#begin-expedition').focus();
+    choices.querySelector('input:checked').focus();
+  }
+
+  function refreshActionHints() {
+    $$('[data-action-hint]').forEach(node => { node.textContent = actionLabel(profile, input.lastDevice, node.dataset.actionHint); });
+    $$('[data-controls-help]').forEach(node => { node.textContent = controlsSummary(profile, input.lastDevice); });
+  }
+  input.onDeviceChange = refreshActionHints;
+
+  function cancelRemapping(message = 'Modification annulée.') {
+    if (!remappingAction) return;
+    const button = $(`[data-remap="${remappingAction}"]`);
+    if (button) button.textContent = actionKeys(profile, remappingAction).map(keyLabel).join(' / ');
+    remappingAction = null;
+    const status = $('#binding-status');
+    if (status) status.textContent = message;
+  }
+
+  function bindRemapping(box) {
+    box.querySelectorAll('[data-remap]').forEach(button => {
+      button.onclick = () => {
+        cancelRemapping();
+        remappingAction = button.dataset.remap;
+        button.textContent = 'Appuyez sur une touche…';
+        $('#binding-status').textContent = `${ACTIONS[remappingAction].title} : appuyez sur une touche simple. Échap ou Tab pour annuler.`;
+      };
+    });
+    $('#reset-bindings').onclick = () => {
+      cancelRemapping();
+      profile.options.bindings = clone(DEFAULT_BINDINGS);
+      storage.saveProfile(profile);
+      box.querySelectorAll('[data-remap]').forEach(button => { button.textContent = actionKeys(profile, button.dataset.remap).map(keyLabel).join(' / '); });
+      $('#binding-status').textContent = 'Commandes d’origine rétablies.';
+      input.reset();
+      refreshActionHints();
+    };
   }
 
   function cardMarkup(title, text, locked = false, action = '') {
@@ -1930,7 +2470,94 @@
     return article;
   }
 
+  function renderCollection(box) {
+    const totals = { archives: Data.ARCHIVES.length, achievements: Data.ACHIEVEMENTS.length, endings: Object.keys(Data.ENDINGS).length };
+    const names = { archives: 'Archives', achievements: 'Succès', endings: 'Fins' };
+    box.innerHTML = `<nav class="options-tabs collection-tabs" role="tablist" aria-label="Catégories de la collection">${Object.entries(names).map(([key, label]) => `<button type="button" role="tab" id="collection-tab-${key}" data-collection-tab="${key}" aria-controls="collection-results">${label} ${profile[key].length}/${totals[key]}</button>`).join('')}</nav>
+      <div class="collection-filters"><label>Afficher<select id="collection-filter"><option value="all">Tout</option><option value="found">Découverts / obtenus</option><option value="missing">À découvrir / accomplir</option></select></label><label id="collection-chapter-label">Chapitre<select id="collection-chapter"><option value="all">Tous les chapitres</option>${Data.CHAPTERS.map((chapter, index) => `<option value="${index}">${chapter.title}</option>`).join('')}</select></label></div>
+      <p id="collection-progress" class="option-help"></p><p id="collection-count" role="status"></p>
+      <section id="collection-results" role="tabpanel" tabindex="0"><div id="collection-grid" class="panel-grid"></div></section>
+      <div class="collection-pager"><button id="collection-previous" type="button">Précédent</button><span id="collection-page"></span><button id="collection-next" type="button">Suivant</button></div>`;
+    $('#collection-filter').value = collectionView.filter;
+    $('#collection-chapter').value = collectionView.chapter;
+    const render = () => {
+      box.querySelectorAll('[data-collection-tab]').forEach(button => {
+        const selected = button.dataset.collectionTab === collectionView.category;
+        button.setAttribute('aria-selected', String(selected));
+        button.tabIndex = selected ? 0 : -1;
+      });
+      $('#collection-results').setAttribute('aria-labelledby', `collection-tab-${collectionView.category}`);
+      $('#collection-chapter-label').hidden = collectionView.category !== 'archives';
+      const progress = $('#collection-progress');
+      progress.hidden = collectionView.category !== 'archives';
+      progress.textContent = Data.CHAPTERS.map((chapter, index) => `Chapitre ${index + 1} : ${Data.ARCHIVES.filter(item => item.chapter === index && profile.archives.includes(item.id)).length}/3 archives · ${profile.visited.includes(chapter.id) ? 'visité' : 'non visité'}`).join(' | ');
+      const entries = collectionEntries(profile, collectionView);
+      const pages = Math.max(1, Math.ceil(entries.length / 6));
+      collectionView.page = clamp(collectionView.page, 0, pages - 1);
+      $('#collection-count').textContent = `${names[collectionView.category]} · ${entries.length} élément(s) pour ces filtres.`;
+      const grid = $('#collection-grid');
+      grid.replaceChildren();
+      entries.slice(collectionView.page * 6, collectionView.page * 6 + 6).forEach(entry => appendCard(grid, entry.title, entry.text, !entry.found));
+      if (!entries.length) appendCard(grid, 'Aucun résultat', 'Choisissez un autre filtre pour parcourir votre collection.');
+      $('#collection-page').textContent = `${collectionView.page + 1} / ${pages}`;
+      $('#collection-previous').disabled = collectionView.page === 0;
+      $('#collection-next').disabled = collectionView.page >= pages - 1;
+    };
+    box.querySelectorAll('[data-collection-tab]').forEach(button => {
+      button.onclick = () => { collectionView.category = button.dataset.collectionTab; collectionView.page = 0; render(); };
+      button.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const tabs = [...box.querySelectorAll('[data-collection-tab]')];
+        const index = tabs.indexOf(button);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowLeft' ? -1 : 1) + tabs.length) % tabs.length;
+        tabs[next].click(); tabs[next].focus();
+      });
+    });
+    $('#collection-filter').onchange = event => { collectionView.filter = event.target.value; collectionView.page = 0; render(); };
+    $('#collection-chapter').onchange = event => { collectionView.chapter = event.target.value; collectionView.page = 0; render(); };
+    $('#collection-previous').onclick = () => { collectionView.page--; render(); $('#collection-results').focus(); };
+    $('#collection-next').onclick = () => { collectionView.page++; render(); $('#collection-results').focus(); };
+    render();
+  }
+
+  function renderNotebook(box) {
+    const heading = document.createElement('h3');
+    heading.textContent = 'Carnet des découvertes';
+    box.append(heading);
+    const chapters = notebookEntries(profile);
+    if (!chapters.length) appendCard(box, 'Aucun relevé pour le moment', 'Examinez une inscription, révélez un mécanisme ou retrouvez une archive pour l’ajouter à ce carnet.');
+    for (const chapter of chapters) {
+      const section = document.createElement('section');
+      section.className = 'notebook-chapter';
+      const title = document.createElement('h4');
+      title.textContent = chapter.title;
+      const grid = document.createElement('div');
+      grid.className = 'panel-grid';
+      chapter.entries.forEach(entry => appendCard(grid, entry.title, entry.text));
+      section.append(title, grid);
+      box.append(section);
+    }
+    if (game?.level) {
+      const known = game.level.objects.filter(object => object.type === game.level.kind && (object.done || object.revealed));
+      if (known.length) {
+        const states = document.createElement('div');
+        states.className = 'panel-grid';
+        for (const object of known) appendCard(states, object.label, object.done ? 'État actuel : activé.' : `État actuel : orientation ${ORIENTATIONS[object.orientation]} · cible relevée ${ORIENTATIONS[object.targetOrientation]}.`);
+        const title = document.createElement('h3');
+        title.textContent = 'Mécanismes connus dans ce chapitre';
+        box.append(title, states);
+      }
+    }
+    if (profile.notebookRecent) {
+      const chapter = Data.CHAPTERS.find(item => item.id === profile.notebookRecent.chapterId);
+      appendCard(box, `Dernier message · ${chapter?.title || ''}`, profile.notebookRecent.text);
+    }
+  }
+
   function openPanel(kind, returnTo = 'title') {
+    cancelRemapping();
     const panel = $('#panel');
     const title = $('#panel-title');
     const box = $('#panel-content');
@@ -1956,7 +2583,7 @@
       actions.className = 'campaign-actions';
       actions.innerHTML = '<button data-campaign="new" class="primary">Nouvelle expédition</button><button data-campaign="chapters">Rejouer un chapitre</button>';
       box.append(summary, actions);
-      $('[data-campaign="new"]').onclick = showPrologue;
+      $('[data-campaign="new"]').onclick = () => showPrologue();
       $('[data-campaign="chapters"]').onclick = () => openPanel('chapters');
     } else if (kind === 'chapters') {
       title.textContent = 'Chapitres';
@@ -1983,57 +2610,72 @@
       box.append(grid);
     } else if (kind === 'archives') {
       title.textContent = 'Collection';
-      const archivesHeading = document.createElement('h3');
-      archivesHeading.textContent = `Archives ${profile.archives.length}/18`;
-      const archivesGrid = document.createElement('div');
-      archivesGrid.className = 'panel-grid';
-      Data.ARCHIVES.forEach(archive => appendCard(archivesGrid, archive.title, profile.archives.includes(archive.id) ? archive.text : 'Document non découvert', !profile.archives.includes(archive.id)));
-      const achievementHeading = document.createElement('h3');
-      achievementHeading.textContent = `Succès ${profile.achievements.length}/16`;
-      const achievementGrid = document.createElement('div');
-      achievementGrid.className = 'panel-grid';
-      Data.ACHIEVEMENTS.forEach(achievement => appendCard(achievementGrid, achievement.title, profile.achievements.includes(achievement.id) ? achievement.description : 'Verrouillé', !profile.achievements.includes(achievement.id)));
-      box.append(archivesHeading, archivesGrid, achievementHeading, achievementGrid);
-      const endingsHeading = document.createElement('h3');
-      endingsHeading.textContent = `Fins ${profile.endings.length}/${Object.keys(Data.ENDINGS).length}`;
-      const endingsGrid = document.createElement('div');
-      endingsGrid.className = 'panel-grid';
-      Object.entries(Data.ENDINGS).forEach(([key, ending]) => appendCard(endingsGrid,
-        profile.endings.includes(key) ? ending.title : 'Fin non découverte',
-        profile.endings.includes(key) ? ending.text : 'Poursuivez votre relation avec Aziz pour découvrir un autre dénouement.',
-        !profile.endings.includes(key)));
-      box.append(endingsHeading, endingsGrid);
+      renderCollection(box);
     } else if (kind === 'options') {
       title.textContent = 'Options';
       box.innerHTML = `
         <nav class="options-tabs" role="tablist" aria-label="Catégories des options">${[['display', 'Image'], ['audio', 'Son'], ['access', 'Accessibilité'], ['controls', 'Jeu et commandes']].map(([key, label]) => `<button type="button" id="tab-${key}" role="tab" data-options-tab="${key}" aria-controls="options-${key}">${label}</button>`).join('')}</nav>
         <section id="options-display" role="tabpanel" aria-labelledby="tab-display" data-options-section="display">
+          <label class="option-row"><span>Luminosité<output id="value-brightness" for="opt-brightness"></output></span><input id="opt-brightness" type="range" min=".7" max="1.6" step=".05" value="${profile.options.brightness}"></label>
+          <div class="calibration-preview" role="img" aria-label="Mire de luminosité : trois soleils de plus en plus clairs"><span>☼</span><span>☼</span><span>☼</span></div>
+          <p class="option-help">Réglez votre écran et la luminosité pour distinguer à peine le soleil central. Celui de droite doit rester visible. En pause, le temple reflète votre réglage ; la portée des lampes reste identique.</p>
           <label class="option-row"><span>Champ de vision<output id="value-fov" for="opt-fov"></output></span><input id="opt-fov" type="range" min="55" max="85" value="${profile.options.fov}"></label>
           <label class="option-row">Qualité du rendu<select id="opt-quality"><option value="auto">Automatique</option><option value="low">Économie mobile</option><option value="high">Haute</option></select></label>
         </section>
         <section id="options-audio" role="tabpanel" aria-labelledby="tab-audio" data-options-section="audio">
           <label class="option-row"><span>Volume<output id="value-volume" for="opt-volume"></output></span><input id="opt-volume" type="range" min="0" max="1" step=".05" value="${profile.options.volume}"></label>
-          ${[['subtitles', 'Sous-titres des voix'], ['voices', 'Voix synthétiques françaises']].map(([key, label]) => `<label class="option-row">${label}<input id="opt-${key}" type="checkbox" ${profile.options[key] ? 'checked' : ''}></label>`).join('')}
-          <p class="option-help">Les indices et messages de jeu restent visibles, même sans sous-titres. Les voix disponibles dépendent de votre appareil.</p>
+          ${[['effectsVolume', 'Effets et signaux'], ['ambienceVolume', 'Ambiance'], ['voiceVolume', 'Voix d’Aziz']].map(([key, label]) => `<label class="option-row"><span>${label}<output id="value-${key}" for="opt-${key}"></output></span><input id="opt-${key}" type="range" min="0" max="1" step=".05" value="${profile.options[key]}"></label>`).join('')}
+          ${[['subtitles', 'Sous-titres des voix'], ['voices', 'Voix françaises locales'], ['reduceDynamicRange', 'Réduire la dynamique des sons']].map(([key, label]) => `<label class="option-row">${label}<input id="opt-${key}" type="checkbox" ${profile.options[key] ? 'checked' : ''}></label>`).join('')}
+          <p id="voice-availability" class="option-help"></p>
+          <div class="save-actions"><button type="button" data-audio-preview="effects">Écouter les effets</button><button type="button" data-audio-preview="ambience">Écouter l’ambiance</button><button type="button" data-audio-preview="voice">Écouter Aziz</button></div>
+          <p id="audio-preview-status" class="option-help" role="status"></p>
+          <p class="option-help">Les indices restent lisibles sans son. Si aucune voix française locale n’est disponible, les répliques sont affichées. La préécoute conserve la partie en pause.</p>
         </section>
         <section id="options-access" role="tabpanel" aria-labelledby="tab-access" data-options-section="access">
-          ${[['directionCues', 'Repères directionnels textuels'], ['reduceMotion', 'Réduction des mouvements'], ['largeText', 'Texte agrandi'], ['highContrast', 'Contraste renforcé']].map(([key, label]) => `<label class="option-row">${label}<input id="opt-${key}" type="checkbox" ${profile.options[key] ? 'checked' : ''}></label>`).join('')}
+          ${[['directionCues', 'Repères directionnels textuels'], ['reduceMotion', 'Réduction des mouvements'], ['reduceFlashes', 'Réduire les flashs lumineux'], ['largeText', 'Texte agrandi'], ['highContrast', 'Contraste renforcé']].map(([key, label]) => `<label class="option-row">${label}<input id="opt-${key}" type="checkbox" ${profile.options[key] ? 'checked' : ''}></label>`).join('')}
         </section>
         <section id="options-controls" role="tabpanel" aria-labelledby="tab-controls" data-options-section="controls">
           <label class="option-row"><span>Difficulté<small id="difficulty-description"></small></span><select id="opt-difficulty">${Object.entries(Data.DIFFICULTIES).map(([key, value]) => `<option value="${key}" ${profile.difficulty === key ? 'selected' : ''}>${value.name}</option>`).join('')}</select></label>
           <label class="option-row"><span>Sensibilité<output id="value-sensitivity" for="opt-sensitivity"></output></span><input id="opt-sensitivity" type="range" min=".3" max="2" step=".1" value="${profile.options.sensitivity}"></label>
-          <p class="option-help">ZQSD / WASD : déplacement · Maj : courir · Souris : regarder · E : interagir · F : appeler Aziz · C / clic droit : signal · Espace : flash · L : lampe · Échap : pause.</p>
+          <p class="option-help" data-controls-help></p>
           <p class="option-help">Manette : haut / bas pour parcourir, gauche / droite pour régler une valeur, A / Croix pour valider, B / Rond pour revenir.</p>
+          <h3>Commandes tactiles</h3>
+          <label class="option-row"><span>Taille des commandes<output id="value-touch-scale" for="opt-touch-scale"></output></span><input id="opt-touch-scale" type="range" min=".85" max="1.25" step=".05" value="${profile.options.touchScale}"></label>
+          <label class="option-row">Côté des actions<select id="opt-touch-side"><option value="right">Droite · déplacement à gauche</option><option value="left">Gauche · déplacement à droite</option></select></label>
+          <label class="option-row">Course tactile<select id="opt-touch-sprint"><option value="toggle">Appuyer pour activer / arrêter</option><option value="hold">Maintenir pour courir</option></select></label>
+          <p class="option-help">En mode bascule, un second appui sur COURIR arrête la course. La pause la désactive. Le déplacement, la visée et une action restent indépendants.</p>
+          <h3>Touches du clavier</h3>
+          <p class="option-help">Choisissez une action puis une touche simple. Les lettres correspondent aux positions physiques WASD / ZQSD. Échap reste disponible pour la pause et le retour des menus.</p>
+          <div class="binding-grid">${Object.entries(ACTIONS).map(([key, action]) => `<div class="binding-row"><span id="binding-label-${key}">${action.title}</span><button type="button" data-remap="${key}" aria-labelledby="binding-label-${key} binding-key-${key}" id="binding-key-${key}">${actionKeys(profile, key).map(keyLabel).join(' / ')}</button></div>`).join('')}</div>
+          <p id="binding-status" class="option-help" role="status"></p><button type="button" id="reset-bindings">Rétablir les touches d’origine</button>
         </section>`;
       $('#opt-quality').value = profile.options.quality;
+      $('#opt-touch-side').value = profile.options.touchSide;
+      $('#opt-touch-sprint').value = profile.options.touchSprint;
+      bindRemapping(box);
       const updateDescription = () => {
         $('#difficulty-description').textContent = Data.DIFFICULTIES[$('#opt-difficulty').value].description;
         $('#value-volume').textContent = `${Math.round(profile.options.volume * 100)} %`;
+        for (const key of ['effectsVolume', 'ambienceVolume', 'voiceVolume', 'brightness']) $(`#value-${key}`).textContent = `${Math.round(profile.options[key] * 100)} %`;
+        const localVoice = audio.localVoice();
+        $('#voice-availability').textContent = localVoice ? `Voix locale : ${localVoice.name}` : 'Voix française locale indisponible · les répliques restent écrites.';
         $('#value-fov').textContent = `${profile.options.fov}°`;
         $('#value-sensitivity').textContent = `${profile.options.sensitivity.toFixed(1)}×`;
+        $('#value-touch-scale').textContent = `${Math.round(profile.options.touchScale * 100)} %`;
       };
       updateDescription();
+      box.querySelectorAll('[data-audio-preview]').forEach(button => {
+        button.onclick = () => {
+          if (button.dataset.audioPreview === 'voice' && !profile.options.voices) {
+            $('#audio-preview-status').textContent = 'Activez les voix françaises locales pour cette préécoute.';
+            return;
+          }
+          $('#audio-preview-status').textContent = 'Préécoute · votre progression reste en pause.';
+          if (!audio.preview(button.dataset.audioPreview)) $('#audio-preview-status').textContent = 'Audio indisponible sur cet appareil.';
+        };
+      });
       const selectSection = key => {
+        cancelRemapping();
         optionsSection = key;
         box.querySelectorAll('[data-options-section]').forEach(section => { section.hidden = section.dataset.optionsSection !== key; });
         box.querySelectorAll('[data-options-tab]').forEach(button => {
@@ -2057,12 +2699,21 @@
       });
       selectSection(optionsSection);
       const updateOptions = () => {
+        const previousDifficulty = profile.difficulty;
         profile.difficulty = $('#opt-difficulty').value;
+        if (game?.level && ['playing', 'paused'].includes(game.mode) && previousDifficulty !== profile.difficulty) {
+          game.trackDifficulty();
+          game.save(true);
+        }
         profile.options.volume = +$('#opt-volume').value;
+        for (const key of ['effectsVolume', 'ambienceVolume', 'voiceVolume', 'brightness']) profile.options[key] = +$(`#opt-${key}`).value;
         profile.options.sensitivity = +$('#opt-sensitivity').value;
         profile.options.fov = +$('#opt-fov').value;
         profile.options.quality = $('#opt-quality').value;
-        for (const key of ['subtitles', 'voices', 'directionCues', 'reduceMotion', 'largeText', 'highContrast']) profile.options[key] = $(`#opt-${key}`).checked;
+        profile.options.touchScale = +$('#opt-touch-scale').value;
+        profile.options.touchSide = $('#opt-touch-side').value;
+        profile.options.touchSprint = $('#opt-touch-sprint').value;
+        for (const key of ['subtitles', 'voices', 'directionCues', 'reduceMotion', 'reduceFlashes', 'reduceDynamicRange', 'largeText', 'highContrast']) profile.options[key] = $(`#opt-${key}`).checked;
         storage.saveProfile(profile);
         applyOptions();
         updateDescription();
@@ -2075,7 +2726,7 @@
       title.textContent = 'Sauvegardes';
       if (game?.level && returnTo === 'pause') game.save(true);
       const explanation = document.createElement('p');
-      explanation.textContent = 'Le dossier JSON conserve campagne, options, archives, succès et fins. Une collection sans campagne active peut aussi être transférée.';
+      explanation.textContent = 'Le dossier JSON conserve campagne, options, touches personnalisées, carnet, archives, succès et fins. Une collection sans campagne active peut aussi être transférée.';
       const area = document.createElement('textarea');
       area.id = 'save-json';
       area.setAttribute('aria-label', 'Dossier de sauvegarde JSON');
@@ -2145,18 +2796,22 @@
       box.innerHTML = `
         <div class="journal-lead"><p class="eyebrow">PLATEAU DE GIZEH · NOVEMBRE 1926 · EXPÉDITION FICTIONNELLE</p><h3>${chapter?.objective || 'Campagne'}</h3><p>${journalHint || 'Retrouvez les dix-huit relevés et gardez Aziz éveillé.'}</p></div>
         <div class="journal-stats"><span>Progression <b>${game?.objectiveCount || 0}/${chapter?.target || 0}</b></span><span>Lien <b>${Math.ceil(projector?.link || 0)}%</b></span><span>Confiance <b>${Math.round(game?.aziz?.trust || 0)}</b></span><span>Corruption <b>${Math.round(game?.aziz?.corruption || 0)}</b></span></div>
-        <h3>Doctrine de lumière</h3><p><b>C / clic droit</b>: transmettre Soleil — Silence — Soleil et changer le projecteur. <b>Focalisé</b> charge et brûle; <b>Balayage</b> révèle; <b>Rempart</b> protège à courte portée. <b>F</b> réveille Aziz mais produit un bruit puissant.</p>
+        <div id="notebook"></div>
+        <h3>Doctrine de lumière</h3><p><b data-action-hint="signal"></b> : transmettre Soleil — Silence — Soleil et changer le projecteur. <b>Focalisé</b> charge et brûle; <b>Balayage</b> révèle; <b>Rempart</b> protège à courte portée. <b data-action-hint="call"></b> réveille Aziz mais produit un bruit puissant.</p>
         <h3>Menaces relevées</h3><div id="threat-notes" class="panel-grid"></div>
-        <h3>Commandes</h3><p>ZQSD/WASD: marcher · Maj: courir · souris: regarder · E: interagir · F: appeler Aziz · C/clic droit: signal · Espace: flash · L: lampe · Échap: pause.</p>`;
+        <h3>Commandes</h3><p data-controls-help></p>`;
+      renderNotebook($('#notebook'));
       const notes = $('#threat-notes');
       for (const threat of Object.values(Data.THREATS)) appendCard(notes, threat.name, threat.behavior);
     }
 
+    refreshActionHints();
     syncModalState();
     requestAnimationFrame(() => { if ($$('.overlay.open').at(-1) === panel) $('[data-close]').focus(); });
   }
 
   function closePanel(restoreFocus = true) {
+    cancelRemapping();
     const panel = $('#panel');
     const returnTo = panel.dataset.returnTo;
     if (restoreFocus && panel.dataset.parent) {
@@ -2165,7 +2820,9 @@
     }
     panel.classList.remove('open');
     input.reset();
-    if (returnTo === 'pause' && game) {
+    if (returnTo === 'prologue') {
+      showPrologue(true);
+    } else if (returnTo === 'pause' && game) {
       game.mode = 'paused';
       $('#pause-overlay').classList.add('open');
       syncModalState();
@@ -2210,6 +2867,7 @@
 
   function pollUiGamepad() {
     const pad = connectedGamepad();
+    input.observeGamepad(pad);
     const overlay = $$('.overlay.open').at(-1);
     const root = overlay || ($('#title-screen').classList.contains('active') ? $('#title-screen') : null);
     if (pad) {
@@ -2241,8 +2899,8 @@
             focused.dispatchEvent(new Event('change', { bubbles: true }));
             moveBack = upEdge;
             moveForward = downEdge;
-          } else if (focused.matches('[data-options-tab]')) {
-            const tabs = [...root.querySelectorAll('[data-options-tab]')];
+          } else if (focused.matches('[role="tab"]')) {
+            const tabs = [...focused.parentElement.querySelectorAll('[role="tab"]')];
             const next = tabs[(tabs.indexOf(focused) + direction + tabs.length) % tabs.length];
             next.click();
             next.focus();
@@ -2280,6 +2938,8 @@
   }));
 
   $('#begin-expedition').onclick = () => {
+    profile.difficulty = expeditionDifficulty;
+    storage.saveProfile(profile);
     storage.clear();
     $('#prologue-overlay').classList.remove('open');
     begin(0);
@@ -2287,6 +2947,11 @@
   $('#cancel-expedition').onclick = () => {
     $('#prologue-overlay').classList.remove('open');
     openPanel('campaign');
+  };
+  $('#expedition-comfort').onclick = () => {
+    $('#prologue-overlay').classList.remove('open');
+    optionsSection = 'access';
+    openPanel('options', 'prologue');
   };
   $('#confirm-cancel').onclick = () => closeConfirmation();
   $('#confirm-accept').onclick = () => closeConfirmation(true);
@@ -2304,7 +2969,7 @@
         'La progression depuis ce point de contrôle sera perdue. Votre collection reste conservée.',
         'Revenir au point de contrôle', () => {
           $('#pause-overlay').classList.remove('open');
-          game.loadChapter(game.checkpoint.chapterIndex, game.checkpoint, true);
+          game.loadChapter(game.checkpoint.chapterIndex, game.checkpointState(), true);
           game.mode = 'playing';
           audio.suspend(false);
           input.reset();
@@ -2326,7 +2991,23 @@
     if ($('#game-screen').classList.contains('active')) event.preventDefault();
   });
   addEventListener('keydown', event => {
-    if (event.key === 'Escape' && event.repeat) {
+    if (remappingAction) {
+      if (event.code === 'Tab') { cancelRemapping(); return; }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      if (event.repeat) return;
+      if (event.code === 'Escape') { cancelRemapping(); return; }
+      const error = event.ctrlKey || event.metaKey || event.altKey ? 'Utilisez une touche simple, sans Ctrl, Alt ni commande système.' : remapBinding(profile, remappingAction, event.code);
+      if (error) { $('#binding-status').textContent = error; return; }
+      const title = ACTIONS[remappingAction].title;
+      storage.saveProfile(profile);
+      cancelRemapping(`${title} : ${keyLabel(event.code)}. Enregistré.`);
+      input.reset();
+      input.setDevice('keyboard');
+      refreshActionHints();
+      return;
+    }
+    if (event.repeat && (event.key === 'Escape' || actionKeys(profile, 'pause').includes(event.code))) {
       event.preventDefault();
       event.stopImmediatePropagation();
       return;
@@ -2344,7 +3025,7 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       closePanel();
-    } else if (event.key === 'Escape' && game?.mode === 'paused' && $('#pause-overlay').classList.contains('open')) {
+    } else if ((event.key === 'Escape' || actionKeys(profile, 'pause').includes(event.code)) && game?.mode === 'paused' && $('#pause-overlay').classList.contains('open')) {
       event.preventDefault();
       event.stopImmediatePropagation();
       game.togglePause();
@@ -2379,10 +3060,17 @@
   };
 
   applyOptions();
+  $$('[data-build-revision]').forEach(node => { node.textContent = window.AZIZ_RELEASE?.revision || 'révision locale'; });
   updateContinueButton();
   requestAnimationFrame(pollUiGamepad);
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+    addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(registration => {
+      const notifyUpdate = () => { if (registration.waiting && navigator.serviceWorker.controller) $('#update-ready').hidden = false; };
+      notifyUpdate();
+      registration.addEventListener('updatefound', () => {
+        registration.installing?.addEventListener('statechange', notifyUpdate);
+      });
+    }).catch(() => {}));
   }
   const testMode = new URLSearchParams(location.search).get('test');
   if (testMode === 'game') begin(0);

@@ -3,4 +3,4 @@ npm warn Unknown env config "http-proxy". This will stop working in the next maj
 > aziz-la-lumiere-dort@1.2.0 build
 > node scripts-build.mjs
 
-Build statique AZIZ v1.2.0 vérifié : 11 ressources, aucun fichier privé, dist/ prêt.
+Build statique AZIZ v1.2.0 vérifié : 13 ressources, aucun fichier privé, dist/ prêt. Révision r6-89a7e3853e1b.

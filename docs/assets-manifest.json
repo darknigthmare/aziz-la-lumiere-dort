@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "inventoryDate": "2026-11-04",
+  "scope": "Fichiers physiques du dossier assets ; visuels Canvas, cartes, textes et sons procéduraux décrits dans SOURCE_PROVENANCE.md.",
+  "licenseDecision": "Aucune licence générale de diffusion choisie dans le dépôt. Décision du propriétaire non inférée par ce registre.",
+  "assets": [
+    {
+      "path": "assets/aziz-giza-1926-keyart.webp",
+      "bytes": 109126,
+      "sha256": "b04f831d4c7a13ddad2324996cf1c8b8228ade9d47ff452fa38576e897446cfc",
+      "origin": "Création générée avec l’outil d’image OpenAI intégré le 30 août 2026 ; conversion WebP.",
+      "source": [
+        "SOURCE_PROVENANCE.md",
+        "docs/KEY_ART_PROMPT.md"
+      ],
+      "author": "Outil image OpenAI ; attribution nominative non consignée",
+      "provenanceStatus": "Documentée dans le dépôt",
+      "distributionLicense": null
+    },
+    {
+      "path": "assets/aziz-giza-1926-social.jpg",
+      "bytes": 65773,
+      "sha256": "9f76ce777557a30e8aa620021efcda9dccc297286fa28e247c5f1b449dfdbec5",
+      "origin": "Dérivée JPEG du key art AZIZ pour les aperçus Open Graph.",
+      "source": [
+        "SOURCE_PROVENANCE.md",
+        "docs/KEY_ART_PROMPT.md"
+      ],
+      "author": "Dérivée du key art OpenAI ; attribution nominative non consignée",
+      "provenanceStatus": "Documentée dans le dépôt",
+      "distributionLicense": null
+    },
+    {
+      "path": "assets/icon-180.png",
+      "bytes": 6350,
+      "sha256": "58f738da9930ea68ca2aa8c1716c7080004f8f3c4ce6c62cb8cc1edb21a28a84",
+      "origin": "Icône PNG présente dans le commit e75bfdd. La filiation exacte avec le SVG et la commande de génération ne sont pas documentées.",
+      "source": [
+        "https://github.com/darknigthmare/aziz-la-lumiere-dort/commit/e75bfdd"
+      ],
+      "author": "Non documenté",
+      "provenanceStatus": "Chaîne de génération à compléter",
+      "distributionLicense": null
+    },
+    {
+      "path": "assets/icon-192.png",
+      "bytes": 6840,
+      "sha256": "5247e2141c7ebd1c822a7625104d484ef47dad169c33126c9ea244bde8f55085",
+      "origin": "Icône PNG présente dans le commit e75bfdd. La filiation exacte avec le SVG et la commande de génération ne sont pas documentées.",
+      "source": [
+        "https://github.com/darknigthmare/aziz-la-lumiere-dort/commit/e75bfdd"
+      ],
+      "author": "Non documenté",
+      "provenanceStatus": "Chaîne de génération à compléter",
+      "distributionLicense": null
+    },
+    {
+      "path": "assets/icon-512.png",
+      "bytes": 18781,
+      "sha256": "57af54d90f284f1a38f4526f70873a90b820b3e0a1635236c531f52d1d72d036",
+      "origin": "Icône PNG présente dans le commit e75bfdd. La filiation exacte avec le SVG et la commande de génération ne sont pas documentées.",
+      "source": [
+        "https://github.com/darknigthmare/aziz-la-lumiere-dort/commit/e75bfdd"
+      ],
+      "author": "Non documenté",
+      "provenanceStatus": "Chaîne de génération à compléter",
+      "distributionLicense": null
+    },
+    {
+      "path": "assets/icon.svg",
+      "bytes": 630,
+      "sha256": "1eb6476825274db8b216a51352c5506e84d49fa9018407134f6c4b619f4842ab",
+      "origin": "Icône SVG originale créée spécifiquement pour la reconstruction AZIZ.",
+      "source": [
+        "SOURCE_PROVENANCE.md"
+      ],
+      "author": "Reconstruction AZIZ ; auteur individuel non consigné",
+      "provenanceStatus": "Documentée dans le dépôt",
+      "distributionLicense": null
+    }
+  ]
+}
