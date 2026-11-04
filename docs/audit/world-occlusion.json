@@ -1,0 +1,116 @@
+[
+  {
+    "chapter": "noms",
+    "player": {
+      "x": 4.5,
+      "y": 11.5
+    },
+    "angle": -0.5,
+    "objectId": "noms-oil-10",
+    "object": {
+      "x": 20.5,
+      "y": 11.5
+    },
+    "radialDistance": 16,
+    "spriteCameraDepth": 14.041320990245964,
+    "wallCameraDepth": 15.340712081137047,
+    "relativeAngle": 0.5,
+    "oldRejected": true,
+    "newRejected": false
+  },
+  {
+    "chapter": "miroirs",
+    "player": {
+      "x": 7.5,
+      "y": 3.5
+    },
+    "angle": 2.0535900500422257,
+    "objectId": "miroirs-objective-4",
+    "object": {
+      "x": 1.5,
+      "y": 7.5
+    },
+    "radialDistance": 7.211102550927979,
+    "spriteCameraDepth": 6.3283378506975785,
+    "wallCameraDepth": 6.845397839409061,
+    "relativeAngle": 0.5,
+    "oldRejected": true,
+    "newRejected": false
+  },
+  {
+    "chapter": "voix",
+    "player": {
+      "x": 18.5,
+      "y": 3.5
+    },
+    "angle": 1.8561944901923448,
+    "objectId": "scribe",
+    "object": {
+      "x": 8.5,
+      "y": 13.5
+    },
+    "radialDistance": 14.142135623730951,
+    "spriteCameraDepth": 12.410891611274913,
+    "wallCameraDepth": 13.023808197029417,
+    "relativeAngle": 0.5,
+    "oldRejected": true,
+    "newRejected": false
+  },
+  {
+    "chapter": "dormeurs",
+    "player": {
+      "x": 1.5,
+      "y": 6.5
+    },
+    "angle": 1.0707963267948966,
+    "objectId": "dormeurs-flash-8",
+    "object": {
+      "x": 1.5,
+      "y": 22.5
+    },
+    "radialDistance": 16,
+    "spriteCameraDepth": 14.041320990245964,
+    "wallCameraDepth": 15.340712081137045,
+    "relativeAngle": 0.5,
+    "oldRejected": true,
+    "newRejected": false
+  },
+  {
+    "chapter": "palais",
+    "player": {
+      "x": 7.5,
+      "y": 3.5
+    },
+    "angle": -0.5,
+    "objectId": "palais-objective-1",
+    "object": {
+      "x": 23.5,
+      "y": 3.5
+    },
+    "radialDistance": 16,
+    "spriteCameraDepth": 14.041320990245964,
+    "wallCameraDepth": 14.463096973520521,
+    "relativeAngle": 0.5,
+    "oldRejected": true,
+    "newRejected": false
+  },
+  {
+    "chapter": "trone",
+    "player": {
+      "x": 1.5,
+      "y": 7.5
+    },
+    "angle": 1.0707963267948966,
+    "objectId": "decret",
+    "object": {
+      "x": 1.5,
+      "y": 23.5
+    },
+    "radialDistance": 16,
+    "spriteCameraDepth": 14.041320990245964,
+    "wallCameraDepth": 14.46309697352052,
+    "relativeAngle": 0.5,
+    "oldRejected": true,
+    "newRejected": false
+  }
+]

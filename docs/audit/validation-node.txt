@@ -1,0 +1,60 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> aziz-la-lumiere-dort@1.2.0 test
+> node --test tests/*.test.mjs
+
+✔ le build vérifie un artefact autonome limité aux fichiers publics (313.247177ms)
+✔ le puits annonce la même séquence que celle réellement acceptée (48.748728ms)
+✔ l’inscription de la galerie ne contredit pas le miroir du roseau (0.839509ms)
+✔ jalon et contrat de contenu v1.2.0 (0.352544ms)
+✔ cartes et entités sont jouables et dans les limites (9.081014ms)
+✔ chaque chapitre possède trois archives et une sortie (0.664046ms)
+✔ les six chapitres possèdent une règle d’énigme sérialisable (0.784458ms)
+✔ le lien du projecteur dépend de la vigilance, de la confiance et de la corruption (3.047916ms)
+✔ les modes du projecteur forment un cycle sans ambiguïté (0.583165ms)
+✔ un mode de sauvegarde invalide revient au balayage avec un projecteur complet (7.036494ms)
+✔ les types objectifs inconnus ne lisent pas les propriétés héritées (0.64003ms)
+✔ les quatre fins ont des scénarios de campagne reproductibles (0.529583ms)
+✔ le directeur accorde une respiration après un pic (0.417285ms)
+✔ WD-045 : le miroir excentré reste dessiné devant un mur plus éloigné (111.902697ms)
+✔ WD-045 : un angle de mur masque seulement la moitié occultée du sprite (80.682289ms)
+✔ WD-009 : les objets architecturaux utilisés restent visibles, les collectables ramassés disparaissent (73.732637ms)
+✔ WD-009 : une cloche épuisée encore ciblable possède toujours un sprite (53.637332ms)
+✔ WD-034 : les redraws ne font pas avancer le flash ni l’état du monde (147.068466ms)
+✔ WD-034 : le flash décroît avec le temps simulé à 30, 60 et 120 Hz (1.463393ms)
+✔ WD-034 : pause et preview des options ne consomment pas le flash (66.679919ms)
+✔ WD-019 : les indices écrits restent affichés sans sous-titres (84.209139ms)
+✔ WD-019 : une parole filtrée ne remplace pas un indice en cours (24.821891ms)
+✔ préparer un import valide ne modifie ni le profil ni la campagne (17.816854ms)
+✔ les imports invalides ne modifient aucune donnée locale (22.229204ms)
+✔ importer un profil seul préserve exactement la campagne locale (22.194494ms)
+✔ un import accepté charge le chapitre normalisé prévu (21.784291ms)
+✔ le stockage refusé conserve une campagne exportable pendant la session (12.487613ms)
+✔ un décès dans update arrête la frame avant une autosauvegarde de l’état mort (18.341975ms)
+✔ la vraie fin de campagne ne recrée pas la sauvegarde effacée durant la même frame (8.639533ms)
+✔ une update déjà en pause ne consomme aucune action ni temps de jeu (12.855808ms)
+✔ le bouton manette maintenu après un menu ne déclenche pas une action de jeu (12.326274ms)
+✔ GP-005 : la canalisation charge sous le vrai faisceau puis se rompt si le joueur détourne la visée (11.225921ms)
+✔ GP-005 : recommencer un sceau n’hérite pas d’une charge partielle précédente (14.078374ms)
+✔ GP-007 : un souvenir attend la disponibilité de l’appel avant de lancer son délai (10.357816ms)
+✔ GP-006 : des scarabées derrière un mur ne drainent pas la lampe (30.332076ms)
+✔ les dégâts de contact sont bloqués par un angle de mur même à courte distance (22.159588ms)
+✔ GP-008 : oil reste disponible lorsque la réserve est pleine (27.92859ms)
+✔ GP-008 : flash reste disponible lorsque la réserve est pleine (13.09491ms)
+✔ la difficulté importée doit être une clé propre du catalogue (9.976521ms)
+✔ le serveur local ne laisse sortir aucun fichier privé (314.131365ms)
+✔ une mise à jour AZIZ conserve les caches des autres applications (12.014171ms)
+✔ le worker laisse passer les écritures et les autres origines (2.673569ms)
+✔ JavaScript valide (836.770911ms)
+✔ surface PWA et contrôles complets (11.715519ms)
+✔ provenance honnête et aucun secret publié (7.835444ms)
+✔ fichiers de production présents (4.330625ms)
+✔ chaque succès déclaré possède un déclencheur runtime (3.205066ms)
+ℹ tests 47
+ℹ suites 0
+ℹ pass 47
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1438.323459

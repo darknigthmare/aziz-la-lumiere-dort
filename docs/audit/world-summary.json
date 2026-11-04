@@ -1,0 +1,100 @@
+{
+  "reference": "66c8efe0f309c1aeaf64673141467aea2e1d774c",
+  "method": "Parcours en largeur, déplacements orthogonaux, sans IA, ressources, exploration ni temps humain.",
+  "chapters": [
+    {
+      "id": "noms",
+      "title": "I. La Chambre des noms",
+      "open": 323,
+      "reachable": 323,
+      "objects": 15,
+      "objectsReachable": 15,
+      "exitDistance": 39,
+      "sequence": null,
+      "routeSegments": null,
+      "routeLength": null
+    },
+    {
+      "id": "miroirs",
+      "title": "II. La Galerie des miroirs",
+      "open": 374,
+      "reachable": 374,
+      "objects": 15,
+      "objectsReachable": 15,
+      "exitDistance": 43,
+      "sequence": null,
+      "routeSegments": null,
+      "routeLength": null
+    },
+    {
+      "id": "voix",
+      "title": "III. Le Puits des voix",
+      "open": 384,
+      "reachable": 384,
+      "objects": 15,
+      "objectsReachable": 15,
+      "exitDistance": 43,
+      "sequence": [
+        "Pierre du soleil",
+        "Pierre du souffle",
+        "Pierre du silence"
+      ],
+      "routeSegments": [
+        20,
+        23,
+        18,
+        12
+      ],
+      "routeLength": 73
+    },
+    {
+      "id": "dormeurs",
+      "title": "IV. La Chambre des dormeurs",
+      "open": 351,
+      "reachable": 351,
+      "objects": 15,
+      "objectsReachable": 15,
+      "exitDistance": 41,
+      "sequence": null,
+      "routeSegments": null,
+      "routeLength": null
+    },
+    {
+      "id": "palais",
+      "title": "V. Le Palais sous le soleil",
+      "open": 344,
+      "reachable": 344,
+      "objects": 15,
+      "objectsReachable": 15,
+      "exitDistance": 41,
+      "sequence": [
+        "Pylône I",
+        "Pylône III",
+        "Pylône V",
+        "Pylône II",
+        "Pylône IV"
+      ],
+      "routeSegments": [
+        24,
+        27,
+        25,
+        28,
+        9,
+        20
+      ],
+      "routeLength": 133
+    },
+    {
+      "id": "trone",
+      "title": "VI. Le Trône de l’aube absente",
+      "open": 422,
+      "reachable": 422,
+      "objects": 14,
+      "objectsReachable": 14,
+      "exitDistance": 45,
+      "sequence": null,
+      "routeSegments": null,
+      "routeLength": null
+    }
+  ]
+}

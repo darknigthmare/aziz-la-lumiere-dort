@@ -7,6 +7,25 @@ const source=await readFile(new URL('../src/data.js',import.meta.url),'utf8');
 const context={};vm.createContext(context);vm.runInContext(source,context);
 const data=context.AZIZ_DATA;
 
+test('le puits annonce la même séquence que celle réellement acceptée',async()=>{
+  const chapter=data.CHAPTERS.find(item=>item.id==='voix');
+  const order=Array.from(chapter.sequence,index=>chapter.objectiveLabels[index].replace('Pierre du ','').toLowerCase());
+  assert.deepEqual(order,['soleil','souffle','silence']);
+  const clue=order.join(', ');
+  assert.ok(chapter.hint.toLowerCase().includes(clue),'L’indice doit donner l’ordre des pierres, pas le code du projecteur.');
+  assert.ok(data.ARCHIVES.find(item=>item.id==='conduit-sept').text.toLowerCase().includes(clue));
+  const guide=await readFile(new URL('../docs/GUIDE_DU_JOUEUR.md',import.meta.url),'utf8');
+  assert.ok(guide.toLowerCase().includes(order.join(' — ')));
+});
+
+test('l’inscription de la galerie ne contredit pas le miroir du roseau',()=>{
+  const chapter=data.CHAPTERS.find(item=>item.id==='miroirs');
+  const reed=chapter.objects.find(object=>object.label==='Miroir du roseau');
+  assert.equal(reed.targetOrientation,0,'Le roseau doit regarder au nord.');
+  assert.doesNotMatch(chapter.inscriptions.join(' '),/aucun.*nord/i);
+  assert.match(chapter.inscriptions.join(' '),/roseau.*nord/i);
+});
+
 function reachableKeys(chapter){
   const start=[Math.floor(chapter.start.x),Math.floor(chapter.start.y)],queue=[start],seen=new Set();
   while(queue.length){

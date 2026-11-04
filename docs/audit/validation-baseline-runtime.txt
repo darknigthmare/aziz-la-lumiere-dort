@@ -1,0 +1,528 @@
+✖ WD-019 : les indices écrits restent affichés sans sous-titres (37.740657ms)
+✖ WD-019 : une parole filtrée ne remplace pas un indice en cours (29.468959ms)
+✖ préparer un import valide ne modifie ni le profil ni la campagne (34.752474ms)
+✔ les imports invalides ne modifient aucune donnée locale (12.60771ms)
+✔ importer un profil seul préserve exactement la campagne locale (13.733588ms)
+✔ un import accepté charge le chapitre normalisé prévu (35.88109ms)
+✔ le stockage refusé conserve une campagne exportable pendant la session (15.409598ms)
+✖ un décès dans update arrête la frame avant une autosauvegarde de l’état mort (15.782979ms)
+✖ la vraie fin de campagne ne recrée pas la sauvegarde effacée durant la même frame (20.929564ms)
+✖ une update déjà en pause ne consomme aucune action ni temps de jeu (26.672183ms)
+✖ le bouton manette maintenu après un menu ne déclenche pas une action de jeu (12.913842ms)
+✖ GP-005 : la canalisation charge sous le vrai faisceau puis se rompt si le joueur détourne la visée (18.894629ms)
+✖ GP-005 : recommencer un sceau n’hérite pas d’une charge partielle précédente (33.778478ms)
+✖ GP-007 : un souvenir attend la disponibilité de l’appel avant de lancer son délai (14.062339ms)
+✖ GP-006 : des scarabées derrière un mur ne drainent pas la lampe (30.830096ms)
+✖ les dégâts de contact sont bloqués par un angle de mur même à courte distance (16.465757ms)
+✖ GP-008 : oil reste disponible lorsque la réserve est pleine (40.457497ms)
+✖ GP-008 : flash reste disponible lorsque la réserve est pleine (26.283398ms)
+✖ la difficulté importée doit être une clé propre du catalogue (15.820613ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 4
+ℹ fail 15
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 742.064629
+
+✖ failing tests:
+
+test at tests/runtime.test.mjs:66:1
+✖ WD-019 : les indices écrits restent affichés sans sous-titres (37.740657ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - 'Le miroir doit regarder l’est.'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:70:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'Le miroir doit regarder l’est.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:77:1
+✖ WD-019 : une parole filtrée ne remplace pas un indice en cours (29.468959ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - 'Indice de puzzle'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:82:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'Indice de puzzle',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:89:1
+✖ préparer un import valide ne modifie ni le profil ni la campagne (34.752474ms)
+  TypeError [Error]: storage.prepareImport is not a function
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:94:27)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/runtime.test.mjs:172:1
+✖ un décès dans update arrête la frame avant une autosauvegarde de l’état mort (15.782979ms)
+  Error: Le directeur ne doit plus avancer après la mort.
+      at game.updateDirector (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:176:39)
+      at Game.update (evalmachine.<anonymous>:692:12)
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:177:8)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/runtime.test.mjs:182:1
+✖ la vraie fin de campagne ne recrée pas la sauvegarde effacée durant la même frame (20.929564ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   aziz: {
+  +     corruption: 0,
+  +     mode: 'focus',
+  +     sync: 80,
+  +     trust: 75,
+  +     wake: 89.95331
+  +   },
+  +   chapterIndex: 5,
+  +   chapterStats: {
+  +     calls: 0,
+  +     flashes: 0,
+  +     hits: 0,
+  +     mirrorErrors: 0
+  +   },
+  +   completedIds: [],
+  +   elapsed: 23.05,
+  +   enemyStates: [
+  +     {
+  +       alert: 0,
+  +       alive: false,
+  +       health: 0,
+  +       id: 'trone-ushabti-0',
+  +       memory: 0,
+  +       state: 'dormant',
+  +       x: 9.5,
+  +       y: 1.5
+  +     },
+  +     {
+  +       alert: 0,
+  +       alive: false,
+  +       health: 0,
+  +       id: 'trone-jackal-1',
+  +       memory: 0,
+  +       state: 'dormant',
+  +       x: 16.5,
+  +       y: 16.5
+  +     },
+  +     {
+  +       alert: 0,
+  +       alive: false,
+  +       health: 0,
+  +       id: 'trone-scribe-2',
+  +       memory: 0,
+  +       state: 'dormant',
+  +       x: 16.5,
+  +       y: 9.5
+  +     },
+  +     {
+  +       alert: 0,
+  +       alive: false,
+  +       health: 0,
+  +       id: 'trone-veiled-3',
+  +       memory: 0,
+  +       state: 'dormant',
+  +       x: 4.5,
+  +       y: 20.5
+  +     },
+  +     {
+  +       alert: 0,
+  +       alive: false,
+  +       health: 0,
+  +       id: 'trone-pharaoh-4',
+  +       memory: 0,
+  +       state: 'dormant',
+  +       x: 7.5,
+  +       y: 17.5
+  +     }
+  +   ],
+  +   objectStates: {
+  +     'contre-jour': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'derniere-page': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-bell-9': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-door-11': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-flash-13': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-flash-8': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-inscription-10': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-objective-1': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 3,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-objective-2': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 2,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-objective-3': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 1,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-objective-4': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-oil-12': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     'trone-oil-7': {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     },
+  +     decret: {
+  +       attempts: 0,
+  +       done: false,
+  +       orientation: 0,
+  +       progress: 0,
+  +       revealed: false,
+  +       used: false
+  +     }
+  +   },
+  +   player: {
+  +     a: 0,
+  +     battery: 69.978,
+  +     calm: 100,
+  +     flashes: 3,
+  +     health: 61,
+  +     lampOn: true,
+  +     x: 24.5,
+  +     y: 23.5
+  +   },
+  +   savedAt: '2026-11-04T13:04:21.989Z',
+  +   stats: {
+  +     calls: 0,
+  +     chaptersCompleted: 0,
+  +     correctResponses: 0,
+  +     deaths: 0,
+  +     flashes: 0,
+  +     hits: 0,
+  +     objectives: 0,
+  +     puzzleErrors: 0,
+  +     revives: 0,
+  +     signals: 0,
+  +     startedAt: 0
+  +   },
+  +   version: '1.2.0'
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:192:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { version: '1.2.0', chapterIndex: 5, player: { x: 24.5, y: 23.5, a: 0, health: 61, battery: 69.978, flashes: 3, lampOn: true, calm: 100 }, aziz: { wake: 89.95331, trust: 75, corruption: 0, sync: 80, mode: 'focus' }, completedIds: [], objectStates: { 'trone-objective-1': [Object], 'trone-objective-2': [Object], 'trone-objective-3': [Object], 'trone-objective-4': [Object], decret: [Object], 'derniere-page': [Object], 'contre-jour': [Object], 'trone-oil-7': [Object], 'trone-flash-8': [Object], 'trone-bell-9': [Object], 'trone-inscription-10': [Object], 'trone-door-11': [Object], 'trone-oil-12': [Object], 'trone-flash-13': [Object] }, enemyStates: [ [Object], [Object], [Object], [Object], [Object] ], elapsed: 23.05, stats: { calls: 0, flashes: 0, hits: 0, signals: 0, revives: 0, deaths: 0, puzzleErrors: 0, correctResponses: 0, objectives: 0, chaptersCompleted: 0, startedAt: 0 }, chapterStats: { calls: 0, flashes: 0, hits: 0, mirrorErrors: 0 }, savedAt: '2026-11-04T13:04:21.989Z' },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:198:1
+✖ une update déjà en pause ne consomme aucune action ni temps de jeu (26.672183ms)
+  Error: Les actions de jeu ne doivent pas être consommées en pause.
+      at game.input.take (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:201:35)
+      at Game.update (evalmachine.<anonymous>:620:22)
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:202:8)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/runtime.test.mjs:207:1
+✖ le bouton manette maintenu après un menu ne déclenche pas une action de jeu (12.913842ms)
+  TypeError [Error]: input.reset is not a function
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:214:9)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at tests/runtime.test.mjs:234:1
+✖ GP-005 : la canalisation charge sous le vrai faisceau puis se rompt si le joueur détourne la visée (18.894629ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   duration: 2.4,
+  +   id: 'test-seal',
+  +   remaining: 2.1999999999999997
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:247:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { id: 'test-seal', duration: 2.4, remaining: 2.1999999999999997 },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:251:1
+✖ GP-005 : recommencer un sceau n’hérite pas d’une charge partielle précédente (33.778478ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0.85 !== 0
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:257:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0.85,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:261:1
+✖ GP-007 : un souvenir attend la disponibilité de l’appel avant de lancer son délai (14.062339ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + {
+  +   objectId: 'test-memory',
+  +   remaining: 5,
+  +   type: 'memory'
+  + }
+  - null
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:269:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { type: 'memory', objectId: 'test-memory', remaining: 5 },
+    expected: null,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:277:1
+✖ GP-006 : des scarabées derrière un mur ne drainent pas la lampe (30.830096ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  79.25 !== 80
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:285:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 79.25,
+    expected: 80,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:289:1
+✖ les dégâts de contact sont bloqués par un angle de mur même à courte distance (16.465757ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  92 !== 100
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:301:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 92,
+    expected: 100,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:305:3
+✖ GP-008 : oil reste disponible lorsque la réserve est pleine (40.457497ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: true
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:316:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: true,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:305:3
+✖ GP-008 : flash reste disponible lorsque la réserve est pleine (26.283398ms)
+  AssertionError [ERR_ASSERTION]: Expected "actual" to be strictly unequal to: true
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:316:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: true,
+    operator: 'notStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests/runtime.test.mjs:327:1
+✖ la difficulté importée doit être une clé propre du catalogue (15.820613ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'constructor'
+  - 'expedition'
+  
+      at TestContext.<anonymous> (file:///workspace/scratch/bd3267aab1b8/render-baseline/tests/runtime.test.mjs:330:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'constructor',
+    expected: 'expedition',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

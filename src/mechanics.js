@@ -43,7 +43,7 @@
   const PROJECTOR_ORDER = Object.freeze(['sweep', 'focus', 'shelter']);
 
   function normalizeMode(mode) {
-    return PROJECTOR_MODES[mode] ? mode : 'sweep';
+    return typeof mode === 'string' && PROJECTOR_ORDER.includes(mode) ? mode : 'sweep';
   }
 
   function nextProjectorMode(mode) {
@@ -72,14 +72,17 @@
   }
 
   function objectiveRule(kind) {
-    return ({
+    const rules = {
       seal: { mode: 'focus', minLink: 30, duration: 2.4, type: 'channel' },
       mirror: { mode: 'focus', minLink: 24, duration: 0, type: 'align' },
       echo: { mode: 'sweep', minLink: 18, duration: 0, type: 'sequence' },
       memory: { mode: 'sweep', minLink: 28, duration: 0, type: 'response' },
       pylon: { mode: 'focus', minLink: 34, duration: 0, type: 'sequence' },
       finalMirror: { mode: 'focus', minLink: 42, duration: 0, type: 'align' }
-    })[kind] || { mode: 'sweep', minLink: 0, duration: 0, type: 'instant' };
+    };
+    return typeof kind === 'string' && Object.prototype.hasOwnProperty.call(rules, kind)
+      ? rules[kind]
+      : { mode: 'sweep', minLink: 0, duration: 0, type: 'instant' };
   }
 
   function canOperateObjective(kind, aziz = {}) {

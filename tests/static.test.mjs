@@ -23,7 +23,7 @@ test('surface PWA et contrôles complets',async()=>{
   assert.equal(JSON.parse(manifest).display,'standalone');
   assert.match(html,/rel="apple-touch-icon"/);
   assert.equal(JSON.parse(manifest).icons.some(icon=>icon.sizes==='512x512'&&icon.purpose.includes('maskable')),true);
-  assert.match(sw,/aziz-shell-v1\.2\.0-r4/);
+  assert.match(sw,/aziz-shell-v1\.2\.0-r5/);
   assert.match(sw,/mechanics\.js/);
   assert.match(sw,/aziz-giza-1926-keyart\.webp/);
   assert.match(sw,/event\.waitUntil\(update/);
