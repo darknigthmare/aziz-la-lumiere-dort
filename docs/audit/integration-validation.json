@@ -1,0 +1,41 @@
+{
+  "date": "2026-11-04",
+  "version": "1.2.0",
+  "release": {
+    "version": "1.2.0",
+    "revision": "r6-89a7e3853e1b",
+    "fingerprint": "89a7e3853e1b359839c3c8dcb3418b88399718e1da792b51a8de69366ba051b9"
+  },
+  "tests": {
+    "command": "npm test",
+    "passed": 131,
+    "failed": 0,
+    "skipped": 0,
+    "log": "validation-node.txt"
+  },
+  "build": {
+    "command": "npm run build",
+    "references": 13,
+    "precacheFiles": 14,
+    "log": "validation-build.txt"
+  },
+  "sourceSha256": {
+    "index.html": "79284811a8379e1914246d477b36c81214638bd0263dd9c96419ec8b773f3606",
+    "manifest.webmanifest": "53bcf9c6e821a8c6016aa6aa9142b15561b2f07abbc8d123b5f4ee21b42d170b",
+    "src/data.js": "6d8911550e7b442df59b6ce5cbebb2003cbe2f31f36f325bf92472a441fde9eb",
+    "src/game.js": "cab148a3d676de31133fc9a4ae31035b5c715dba96e9d4a3d45739a5d14c16dd",
+    "src/mechanics.js": "7e7301f5d99ce9be51a94660b97063c0681cc347d5feb34d7a5bc2955c88b024",
+    "src/visuals.js": "ec623e8f3deec02523e26f956e514f0d3bb080fccdc64af4451ada8e6fa19688",
+    "src/styles.css": "60a447e20fa8fb5677334da0698efa22fe2ed5e333d9348128001bf6105f99d3",
+    "src/release.js": "09b42c444474f4ff5fbc5fb345507d231250db534d9ec60b2f127bede311e1d6",
+    "sw.js": "62d4e3e13817bbe7696a4650495e1bb5e8996a91fde945b39719b091aca0ae4d"
+  },
+  "browserQa": "Non exécuté ; 9 scénarios ouverts dans audit-register.json",
+  "firstIntegration": {
+    "pullRequest": 1,
+    "mergeCommit": "4b2c555a2a7704a37d5defffb2f20982bff516fe",
+    "productionState": "READY",
+    "deploymentId": "dpl_7rG8XNf1n6Cs3mNCEA9FrqNipVUy"
+  },
+  "deliveryNote": "Le SHA et les checks distants du second lot sont consignés dans sa PR. Ce fichier lie les tests locaux aux octets vérifiés."
+}

@@ -7,8 +7,8 @@ import vm from 'node:vm';
 // Aucune navigation de menus, mise en page ou compatibilité navigateur n'est
 // revendiquée par ce harness : ces parcours restent une recette séparée.
 const root = new URL('../', import.meta.url);
-const [dataSource, mechanicsSource, gameSource] = await Promise.all(
-  ['src/data.js', 'src/mechanics.js', 'src/game.js'].map(path => readFile(new URL(path, root), 'utf8'))
+const [dataSource, mechanicsSource, visualsSource, gameSource] = await Promise.all(
+  ['src/data.js', 'src/mechanics.js', 'src/visuals.js', 'src/game.js'].map(path => readFile(new URL(path, root), 'utf8'))
 );
 const declarationsStart = gameSource.indexOf("  'use strict';");
 const storageEnd = gameSource.indexOf('  class AudioEngine {');
@@ -44,6 +44,7 @@ function environment({ rejectStorage = false } = {}) {
   vm.runInContext('globalThis.window = globalThis;', context);
   vm.runInContext(dataSource, context);
   vm.runInContext(mechanicsSource, context);
+  vm.runInContext(visualsSource, context);
   vm.runInContext(`${gameSource.slice(declarationsStart, storageEnd)}
     ${gameSource.slice(inputStart, gameEnd)}
     globalThis.TEST = { Storage, Game, Input, Data, DEFAULT_STATS, DEFAULT_CHAPTER_STATS, STORAGE_KEY, PROFILE_KEY };
@@ -262,6 +263,7 @@ test('GP-007 : un souvenir attend la disponibilité de l’appel avant de lancer
   const env = environment(), game = activeGame(env);
   const memory = { id: 'test-memory', type: 'memory', label: 'La cour', x: 2.5, y: 3.5, done: false };
   game.level = { ...testRoom([memory]), kind: 'memory', mechanic: 'response' };
+  Object.assign(game.player, { x: 1.5, y: 3.5, a: 0 });
   game.aziz.mode = 'sweep';
   game.challenge = null;
   game.callCooldown = 2;

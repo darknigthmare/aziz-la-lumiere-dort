@@ -44,7 +44,8 @@
           <button data-menu="save">Sauvegardes</button>
           <button id="install-game" hidden>Installer hors ligne</button>
         </nav>
-        <p class="title-footer">v1.2.0 · L’expédition de Gizeh · 6 chapitres</p>
+        <p class="title-footer">v1.2.0 · <span data-build-revision></span> · L’expédition de Gizeh · 6 chapitres</p>
+        <p id="update-ready" class="storage-warning" role="status" hidden>Mise à jour prête. Sauvegardez votre partie, fermez les onglets AZIZ puis rouvrez le jeu pour l’appliquer.</p>
         <p id="storage-warning" class="storage-warning" role="status" hidden>Stockage persistant indisponible · progression conservée pour cette session uniquement.</p>
       </div>
     </section>
@@ -57,10 +58,13 @@
         <p>L’expédition fictive Harcourt vient d’ouvrir une chambre qui ne figure sur aucun relevé. La galerie s’est refermée derrière vous. À la surface, Aziz tient seul la manivelle du projecteur à acétylène.</p>
         <blockquote>« Trois signaux. Soleil — silence — soleil. Si je réponds trop vite, ce n’est plus moi. »</blockquote>
         <div class="briefing-grid">
-          <span><b>C / clic droit</b>Diriger le projecteur</span>
-          <span><b>F</b>Appeler Aziz — et faire du bruit</span>
-          <span><b>E</b>Examiner et actionner</span>
+          <span><b data-action-hint="signal">C</b>Diriger le projecteur</span>
+          <span><b data-action-hint="call">F</b>Appeler Aziz — et faire du bruit</span>
+          <span><b data-action-hint="interact">E / Entrée</b>Examiner et actionner</span>
         </div>
+        <fieldset class="expedition-settings"><legend>Difficulté de cette expédition</legend><div id="expedition-difficulties"></div></fieldset>
+        <p class="option-help">Les réglages de confort et les commandes restent accessibles pendant la partie.</p>
+        <button id="expedition-comfort" type="button">Options de confort et commandes</button>
         <div class="dialog-actions"><button id="cancel-expedition">Retour</button><button id="begin-expedition" class="primary">Descendre dans le temple</button></div>
       </div>
     </section>
@@ -81,23 +85,26 @@
         <div id="crosshair" aria-hidden="true">·</div>
         <div id="prompt"></div>
         <div id="ritual"><span id="ritual-label">FOCALISATION</span><progress id="ritual-meter" max="100"></progress></div>
-        <div id="toast" role="status" aria-live="polite"></div>
+        <div id="message-stack"><div id="toast" role="status" aria-live="polite"></div><div id="voice-fallback" role="status" aria-live="polite"></div></div>
         <div id="threat-status" role="status"></div>
         <div class="inventory"><span>FLASH <b id="flash-count">3</b></span><span>CONFIANCE <b id="trust-value">50</b></span><span>CORRUPTION <b id="corruption-value">0</b></span><span>ARCHIVES <b id="archive-count">0/18</b></span></div>
       </div>
       <div id="touch-controls" aria-label="Commandes tactiles">
         <div id="touch-stick" aria-label="Déplacement"><i></i></div>
-        <button data-action="interact" aria-label="Interagir">E</button>
+        <div class="touch-actions">
+        <button data-action="interact" aria-label="Examiner ou actionner">EXAMINER</button>
         <button data-action="flash" aria-label="Flash au magnésium">FLASH</button>
         <button data-action="call" aria-label="Appeler Aziz">AZIZ</button>
         <button data-action="signal" aria-label="Transmettre le signal">SIGNAL</button>
         <button data-action="lamp" aria-label="Allumer ou éteindre la lampe">LAMPE</button>
+        <button data-action="run" aria-label="Courir" aria-pressed="false">COURIR</button>
+        </div>
         <button data-action="pause" aria-label="Pause">Ⅱ</button>
       </div>
     </section>
 
     <section id="panel" class="overlay" aria-modal="true" role="dialog" aria-labelledby="panel-title">
-      <div class="panel-card"><header><div><p class="eyebrow">AZIZ · v1.2.0</p><h2 id="panel-title"></h2></div><button data-close aria-label="Retour">Retour</button></header><div id="panel-content"></div></div>
+      <div class="panel-card"><header><div><p class="eyebrow">AZIZ · v1.2.0 · <span data-build-revision></span></p><h2 id="panel-title"></h2></div><button data-close aria-label="Retour">Retour</button></header><div id="panel-content"></div></div>
     </section>
     <section id="pause-overlay" class="overlay" aria-modal="true" role="dialog" aria-labelledby="pause-title">
       <div class="panel-card pause-card"><p class="eyebrow">LE TEMPLE ATTEND · v1.2.0</p><h2 id="pause-title">Pause</h2><button data-pause-action="resume" class="primary">Reprendre</button><button data-pause-action="journal">Journal</button><button data-pause-action="options">Options</button><button data-pause-action="archives">Collection</button><button data-pause-action="save">Sauvegardes</button><button data-pause-action="checkpoint">Revenir au point de contrôle</button><button data-pause-action="title">Sauvegarder et quitter</button></div>
@@ -106,8 +113,10 @@
     <section id="confirm-overlay" class="overlay" aria-modal="true" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-text"><div class="panel-card confirm-card"><p class="eyebrow">VOTRE EXPÉDITION</p><h2 id="confirm-title"></h2><p id="confirm-text"></p><div class="dialog-actions"><button id="confirm-cancel">Annuler</button><button id="confirm-accept" class="primary">Confirmer</button></div></div></section>
   </main>
   <noscript>JavaScript doit être activé pour jouer à AZIZ — La Lumière Dort.</noscript>
+  <script src="src/release.js"></script>
   <script src="src/data.js"></script>
   <script src="src/mechanics.js"></script>
+  <script src="src/visuals.js"></script>
   <script src="src/game.js"></script>
 </body>
 </html>

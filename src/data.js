@@ -90,6 +90,23 @@
       objects.push({...take(),type,id:`${spec.id}-${type}-${i}`,label:{oil:'Bidon d’huile minérale',flash:'Plaque de magnésium',bell:'Cloche solaire',inscription:'Inscription relevée',door:'Seuil de repos'}[type],text:spec.inscriptions[flavorIndex],used:false});
     }
     const enemies=spec.enemies.map((type,i)=>({...take(),type,id:`${spec.id}-${type}-${i}`,health:THREATS[type].health,stun:0,alert:0,memory:0,state:'dormant',alive:true}));
+    // The palace uses the existing rectangular galleries as an authored circuit.
+    // Preserve IDs and grid geometry so earlier saved positions remain walkable.
+    if(spec.id==='palais'){
+      const positions=[[5,7],[17,15],[5,15],[17,7],[11,15]].map(([x,y])=>({x:x+.5,y:y+.5}));
+      const cell=point=>`${Math.floor(point.x)}:${Math.floor(point.y)}`;
+      const reserved=new Set(positions.map(cell));
+      const pylons=objects.filter(object=>object.type==='pylon');
+      const vacated=pylons.map(({x,y})=>({x,y})).filter(point=>!reserved.has(cell(point)));
+      for(const entity of [...objects.filter(object=>object.type!=='pylon'),...enemies]){
+        if(reserved.has(cell(entity))){
+          const replacement=vacated.shift();
+          if(!replacement)throw new Error('Le circuit des pylônes manque de cases libres.');
+          Object.assign(entity,replacement);
+        }
+      }
+      pylons.forEach(object=>Object.assign(object,positions[object.sequenceSlot]));
+    }
     return {...spec,index,w,h,grid,objects,enemies,start,exit};
   }
   const CHAPTERS=CHAPTER_SPECS.map(buildChapter);

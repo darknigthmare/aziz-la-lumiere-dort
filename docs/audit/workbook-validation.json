@@ -1,0 +1,47 @@
+{
+  "records": 72,
+  "tests": 22,
+  "verified": 23,
+  "implementationPending": 29,
+  "open": 20,
+  "totals": [
+    72,
+    23,
+    29,
+    20
+  ],
+  "domains": [
+    "Accessibilité",
+    "Architecture et documentation",
+    "Audio",
+    "Commandes et tactile",
+    "Diégèse",
+    "Équilibrage et ressources",
+    "Gameplay et IA",
+    "Level design",
+    "Localisation",
+    "Menus et navigation",
+    "Narration",
+    "Performance",
+    "Progression et rejouabilité",
+    "Props et décors",
+    "Puzzles",
+    "PWA et hors connexion",
+    "QA et livraison",
+    "Rendu et immersion",
+    "Sauvegarde et progression"
+  ],
+  "statuses": [
+    "Corrigé et vérifié",
+    "Implémenté — recette visuelle restante",
+    "Partiellement implémenté",
+    "Partiellement corrigé",
+    "En cours",
+    "À faire",
+    "Proposé",
+    "À planifier",
+    "À valider"
+  ],
+  "inspect": "{\"kind\":\"table\",\"sheet\":\"Synthèse\",\"address\":\"A10:L18\",\"rows\":9,\"cols\":12,\"values\":[[\"Actions recensées\",72,null,null,null,\"Corrigées et vérifiées\",23,null,null,\"À traiter ou poursuivre\",20,null],[\"Implémentées à recetter\",29,null,null,null,null,null,null,null,null,null,null],[null,null,null,null,null,null,null,null,null,null,null,null],[\"Priorités\",null,null,null,null,\"Statuts de livraison\",null,null,null,\"Nature du travail\",null,null],[\"Priorité\",\"Total\",\"Non clôturées\",null,null,\"Statut\",\"Nombre\",null,null,\"Action\",\"Nombre\",null],[\"P0\",0,0,null,null,\"Corrigé et vérifié\",23,null,null,\"Corriger\",24,null],[\"P1\",25,17,null,null,\"Implémenté — recette visuelle restante\",29,null,null,\"Améliorer\",33,null],[\"P2\",44,30,null,null,\"Partiellement implémenté\",3,null,null,\"Ajouter\",15,null],[\"P3\",3,2,null,null,\"Partiellement corrigé\",0,null,null,null,null,null]]}",
+  "errors": "{\"kind\":\"notice\",\"message\":\"Cell search matched 0 entries.\"}"
+}
