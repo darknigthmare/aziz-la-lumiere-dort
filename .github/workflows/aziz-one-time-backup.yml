@@ -1,0 +1,19 @@
+name: AZIZ archive import
+
+on:
+  push:
+    branches: ['backup/aziz-transfer-2026-11-19']
+    paths: ['.aziz-transfer/READY.json']
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require finalized transfer verifier
+        run: |
+          echo 'Transfer verifier has not yet been finalized.'
+          exit 1
